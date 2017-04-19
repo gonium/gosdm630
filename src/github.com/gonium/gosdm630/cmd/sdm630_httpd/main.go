@@ -28,7 +28,7 @@ func main() {
 			Usage: `which communication settings to use. Valid settings are
 		1:  2400 baud, 8N1
 		2:  9600 baud, 8N1
-		3: 19200 baud, 8N1
+		4: 19200 baud, 8N1
 			`,
 		},
 		cli.StringFlag{
