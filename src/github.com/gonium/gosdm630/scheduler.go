@@ -170,6 +170,46 @@ func (s *SDMRoundRobinScheduler) Produce(devid uint8) (retval []QuerySnip) {
 }
 
 // ####################################################################
+// Round-Robin Scheduler for the Eastron SDM120 Devices
+// ####################################################################
+type SDM120RoundRobinScheduler struct {
+}
+
+func NewSDM120RoundRobinScheduler() *SDM120RoundRobinScheduler {
+	return &SDM120RoundRobinScheduler{}
+}
+
+func (s *SDM120RoundRobinScheduler) GetProbeSnip(devid uint8) (retval QuerySnip) {
+	retval = QuerySnip{DeviceId: devid, FuncCode: ReadInputReg,
+		OpCode: OpCodeSDML1Voltage, Value: math.NaN(), Description: "L1 Voltage (V)", IEC61850: "VolLocPhsA"}
+	return retval
+}
+
+func (s *SDM120RoundRobinScheduler) Produce(devid uint8) (retval []QuerySnip) {
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg,
+		OpCode: OpCodeSDML1Voltage, Value: math.NaN(), Description: "L1 Voltage (V)", IEC61850: "VolLocPhsA"})
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML1Current, Value: math.NaN(),
+		Description: "L1 Current (A)", IEC61850: "AmpLocPhsA"})
+
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML1Power, Value: math.NaN(),
+		Description: "L1 Power (W)", IEC61850: "WLocPhsA"})
+
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML1Cosphi, Value: math.NaN(),
+		Description: "L1 Cosphi", IEC61850: "AngLocPhsA"})
+
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDMTotalImport, Value: math.NaN(),
+		Description: "Total Import (kWh)", IEC61850: "TotkWhImport"})
+
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDMTotalExport, Value: math.NaN(),
+		Description: "Total Export (kWh)", IEC61850: "TotkWhExport"})
+
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML1THDVoltageNeutral, Value: math.NaN(),
+		Description: "L1 Voltage to neutral THD (%)", IEC61850: "ThdVolPhsA"})
+
+	return retval
+}
+
+// ####################################################################
 // Round-Robin Scheduler for the Janitza B23 DIN-Rail meters
 // ####################################################################
 
