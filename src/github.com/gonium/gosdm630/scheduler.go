@@ -203,9 +203,6 @@ func (s *SDM120RoundRobinScheduler) Produce(devid uint8) (retval []QuerySnip) {
 	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDMTotalExport, Value: math.NaN(),
 		Description: "Total Export (kWh)", IEC61850: "TotkWhExport"})
 
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML1THDVoltageNeutral, Value: math.NaN(),
-		Description: "L1 Voltage to neutral THD (%)", IEC61850: "ThdVolPhsA"})
-
 	return retval
 }
 
