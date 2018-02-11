@@ -69,6 +69,20 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "golang.org/x/net/proxy",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "f5dfe339be1d06f81b22525fe34671ee7d2c8904",
+			"branch": "master",
+			"path": "/proxy"
+		},
+		{
+			"importpath": "golang.org/x/net/websocket",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "f5dfe339be1d06f81b22525fe34671ee7d2c8904",
+			"branch": "master",
+			"path": "/websocket"
+		},
+		{
 			"importpath": "gopkg.in/urfave/cli.v1",
 			"repository": "https://gopkg.in/urfave/cli.v1",
 			"revision": "0bdeddeeb0f650497d603c4ad7b20cfe685682f6",

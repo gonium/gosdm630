@@ -13,6 +13,7 @@ type MeterState uint8
 const (
 	METERTYPE_JANITZA = "JANITZA"
 	METERTYPE_SDM     = "SDM"
+	METERTYPE_SDM120  = "SDM120"
 	METERTYPE_DZG     = "DZG"
 )
 

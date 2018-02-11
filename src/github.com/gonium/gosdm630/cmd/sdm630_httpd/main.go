@@ -2,12 +2,13 @@ package main
 
 import (
 	"github.com/gonium/gosdm630"
-	"gopkg.in/urfave/cli.v1"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"gopkg.in/urfave/cli.v1"
 )
 
 const (
@@ -53,6 +54,7 @@ func main() {
 			Usage: `MODBUS device type and ID to query, separated by comma.
 			Valid types are:
 			"SDM" for Eastron SDM meters
+			"SDM120" for Eastron SDM120 (not C) meters
 			"JANITZA" for Janitza B-Series DIN-Rail meters
 			"DZG" for the DZG Metering GmbH DVH4013 DIN-Rail meter
 			Example: -d JANITZA:1,SDM:22,DZG:23`,
@@ -93,6 +95,10 @@ func main() {
 			case sdm630.METERTYPE_SDM:
 				meter = sdm630.NewMeter(sdm630.METERTYPE_SDM,
 					uint8(id), sdm630.NewSDMRoundRobinScheduler(),
+					DEFAULT_METER_STORE_SECONDS)
+			case sdm630.METERTYPE_SDM120:
+				meter = sdm630.NewMeter(sdm630.METERTYPE_SDM120,
+					uint8(id), sdm630.NewSDM120RoundRobinScheduler(),
 					DEFAULT_METER_STORE_SECONDS)
 			case sdm630.METERTYPE_DZG:
 				log.Println(`WARNING: The DZG DVH 4013 does not report the same
