@@ -21,6 +21,12 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/eclipse/paho.mqtt.golang",
+			"repository": "https://github.com/eclipse/paho.mqtt.golang",
+			"revision": "bab87cde322cf9aec420645d1e9801d0f216f791",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/goburrow/modbus",
 			"repository": "https://github.com/goburrow/modbus",
 			"revision": "0d0a427beb37599ff34f8d74617af5ac403e9700",
@@ -67,6 +73,20 @@
 			"repository": "https://github.com/nu7hatch/gouuid",
 			"revision": "179d4d0c4d8d407a32af483c2354df1d2c91e6c3",
 			"branch": "master"
+		},
+		{
+			"importpath": "golang.org/x/net/proxy",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "f5dfe339be1d06f81b22525fe34671ee7d2c8904",
+			"branch": "master",
+			"path": "/proxy"
+		},
+		{
+			"importpath": "golang.org/x/net/websocket",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "f5dfe339be1d06f81b22525fe34671ee7d2c8904",
+			"branch": "master",
+			"path": "/websocket"
 		},
 		{
 			"importpath": "gopkg.in/urfave/cli.v1",
