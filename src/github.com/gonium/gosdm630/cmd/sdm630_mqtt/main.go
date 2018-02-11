@@ -11,7 +11,7 @@ import (
 	"time"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
-	sdm630 "github.com/gonium/gosdm630"
+	"github.com/gonium/gosdm630"
 	"gopkg.in/urfave/cli.v1"
 )
 
