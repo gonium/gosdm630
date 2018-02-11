@@ -41,6 +41,9 @@ func main() {
 	var mqttClientID string
 	var mqttQos int
 	var mqttCleanses bool
+	var mqttRate int
+	var mqttRateMap map[string]int64
+	mqttRateMap = make(map[string]int64)
 
 	app := cli.NewApp()
 	app.Name = "sdm630_mqtt"
@@ -68,7 +71,13 @@ func main() {
 			//			FilePath:    "~/.sdm630_mqtt.conf",
 			Destination: &verbose,
 		},
-
+		cli.IntFlag{
+			Name:  "rate, r",
+			Value: 0,
+			Usage: "MQTT: The maximum update rate Default=0=unlimited (after a push we will ignore more data from same device and channel for this time)",
+			//			FilePath:    "~/.sdm630_mqtt.conf",
+			Destination: &mqttRate,
+		},
 		cli.StringFlag{
 			Name:  "topic, t",
 			Value: "gosdm630/",
@@ -217,14 +226,24 @@ func main() {
 						log.Printf("Device %d: Data: %s, Value: %.3f W, Desc: %s", snip.DeviceId, snip.IEC61850, snip.Value, snip.Description)
 					}
 					topic = fmt.Sprintf("%s/status/%d/%s", mqttTopic, snip.DeviceId, snip.IEC61850)
-					message = fmt.Sprintf("%.3f", snip.Value)
-					token = mqttClient.Publish(topic, byte(mqttQos), true, message)
-					if verbose {
-						log.Printf("MQTT: push %s, Message: %s", topic, message)
-					}
-					if token.Wait() && token.Error() != nil {
-						log.Fatal("Error connecting to mqtt: ", token.Error())
-						panic(token.Error())
+
+					t := mqttRateMap[topic]
+					now := time.Now()
+					if mqttRate == 0 || now.Unix() > t {
+						message = fmt.Sprintf("%.3f", snip.Value)
+						token = mqttClient.Publish(topic, byte(mqttQos), true, message)
+						if verbose {
+							log.Printf("MQTT: push %s, Message: %s", topic, message)
+						}
+						if token.Wait() && token.Error() != nil {
+							log.Fatal("Error connecting to mqtt: ", token.Error())
+							panic(token.Error())
+						}
+						mqttRateMap[topic] = now.Unix() + int64(mqttRate)
+					} else {
+						if verbose {
+							log.Printf("Skiped push %s, Message: %s, Rate to high", topic, message)
+						}
 					}
 				}
 			}
