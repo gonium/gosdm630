@@ -1,12 +1,16 @@
 all: build
 
-build: assets
-	@echo "Building for host platform"
-	@gb build all
-	@echo "Building binary for Raspberry Pi"
-	@GOOS=linux GOARCH=arm GOARM=5 gb build all
+build: assets host arm
 	@echo "Created binaries:"
 	@ls -1 bin
+
+host:
+	@echo "Building for host platform"
+	@gb build all
+
+arm:
+	@echo "Building binary for Raspberry Pi"
+	@GOOS=linux GOARCH=arm GOARM=5 gb build all
 
 assets:
 	@echo "Generating embedded assets"
@@ -54,4 +58,4 @@ dep:
 	@echo "Installing embed tool"
 	@go get github.com/aprice/embed/cmd/embed
 
-.PHONY: all build clean
+.PHONY: all build clean host arm
