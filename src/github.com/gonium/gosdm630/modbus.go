@@ -3,11 +3,12 @@ package sdm630
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/goburrow/modbus"
 	"log"
 	"math"
 	"os"
 	"time"
+
+	"github.com/goburrow/modbus"
 )
 
 const (
@@ -17,7 +18,7 @@ const (
 )
 
 const (
-	/***
+	/*
 	 * Opcodes as defined by Eastron.
 	 * See http://bg-etech.de/download/manual/SDM630Register.pdf
 	 * Please note that this is the superset of all SDM devices - some
@@ -52,7 +53,7 @@ const (
 	OpCodeSDML3THDVoltageNeutral  = 0x00ee
 	OpCodeSDMAvgTHDVoltageNeutral = 0x00F8
 
-	/***
+	/*
 	 * Opcodes for Janitza B23.
 	 * See https://www.janitza.de/betriebsanleitungen.html?file=files/download/manuals/current/B-Series/MID-Energy-Meters-Product-Manual.pdf
 	 */
@@ -77,7 +78,7 @@ const (
 	OpCodeJanitzaL2Cosphi    = 0x4A66
 	OpCodeJanitzaL3Cosphi    = 0x4A68
 
-	/***
+	/*
 	 * Opcodes for DZG DVH4014.
 	 * See "User Manual DVH4013", not public.
 	 */
@@ -167,7 +168,7 @@ func NewModbusEngine(
 
 	err := rtuclient.Connect()
 	if err != nil {
-		log.Fatal("Failed to connect: ", err)
+		log.Fatalf("Failed to connect to %s: %s", rtuDevice, err)
 	}
 	defer rtuclient.Close()
 
@@ -205,30 +206,30 @@ func (q *ModbusEngine) Transform(
 	controlStream ControlSnipChannel,
 	outputStream QuerySnipChannel,
 ) {
-	var previousDeviceId uint8 = 0
+	var previousDeviceID uint8
 	for {
 		snip := <-inputStream
 		// The SDM devices need to have a little pause between querying
 		// different devices.
-		if previousDeviceId != snip.DeviceId {
+		if previousDeviceID != snip.DeviceID {
 			time.Sleep(time.Duration(100) * time.Millisecond)
 		}
 		//if snip.OpCode == 0x00 {
 		//	log.Printf("Skipping invalid Snip %+v", snip)
 		//} else {
 		//log.Printf("Executing Snip %+v", snip)
-		previousDeviceId = snip.DeviceId
-		//		value := q.queryOrFail(snip.DeviceId, snip.FuncCode, snip.OpCode, errorStream)
+		previousDeviceID = snip.DeviceID
+		//		value := q.queryOrFail(snip.DeviceID, snip.FuncCode, snip.OpCode, errorStream)
 
 		var err error
 		var reading []byte
 		tryCnt := 0
 		for tryCnt = 0; tryCnt < MaxRetryCount; tryCnt++ {
-			reading, err = q.retrieveOpCode(snip.DeviceId, snip.FuncCode, snip.OpCode)
+			reading, err = q.retrieveOpCode(snip.DeviceID, snip.FuncCode, snip.OpCode)
 			if err != nil {
 				q.status.IncreaseModbusReconnectCounter()
 				log.Printf("Device %d failed to respond - retry attempt %d of %d",
-					snip.DeviceId, tryCnt+1, MaxRetryCount)
+					snip.DeviceID, tryCnt+1, MaxRetryCount)
 				time.Sleep(time.Duration(100) * time.Millisecond)
 			} else {
 				break
@@ -237,13 +238,12 @@ func (q *ModbusEngine) Transform(
 		if tryCnt == MaxRetryCount {
 			errorSnip := ControlSnip{
 				Type:     CONTROLSNIP_ERROR,
-				Message:  fmt.Sprintf("Device %d did not respond.", snip.DeviceId),
-				DeviceId: snip.DeviceId,
+				Message:  fmt.Sprintf("Device %d did not respond.", snip.DeviceID),
+				DeviceID: snip.DeviceID,
 			}
 			controlStream <- errorSnip
 		} else {
-			//Now: convert bytes to value. Assume float64 conversion by
-			//default.
+			//Now: convert bytes to value. Assume float64 conversion by default.
 			if snip.Transform != nil {
 				snip.Value = snip.Transform(reading)
 			} else {
@@ -254,7 +254,7 @@ func (q *ModbusEngine) Transform(
 			successSnip := ControlSnip{
 				Type:     CONTROLSNIP_OK,
 				Message:  "OK",
-				DeviceId: snip.DeviceId,
+				DeviceID: snip.DeviceID,
 			}
 			controlStream <- successSnip
 		}
@@ -263,7 +263,7 @@ func (q *ModbusEngine) Transform(
 
 func (q *ModbusEngine) Scan() {
 	type Device struct {
-		BusId      uint8
+		BusID      uint8
 		DeviceType MeterType
 	}
 	devicelist := make([]Device, 0)
@@ -278,7 +278,7 @@ func (q *ModbusEngine) Scan() {
 		if err == nil {
 			log.Printf("Device %d: SDM type device found, L1 voltage: %.2f\r\n", devid, voltage_L1)
 			dev := Device{
-				BusId:      devid,
+				BusID:      devid,
 				DeviceType: METERTYPE_SDM,
 			}
 			devicelist = append(devicelist, dev)
@@ -288,7 +288,7 @@ func (q *ModbusEngine) Scan() {
 			if err == nil {
 				log.Printf("Device %d: Janitza type device found, L1 voltage: %.2f\r\n", devid, voltage_L1)
 				dev := Device{
-					BusId:      devid,
+					BusID:      devid,
 					DeviceType: METERTYPE_JANITZA,
 				}
 				devicelist = append(devicelist, dev)
@@ -303,7 +303,7 @@ func (q *ModbusEngine) Scan() {
 	q.handler.Timeout = oldtimeout
 	log.Printf("Found %d active devices:\r\n", len(devicelist))
 	for _, device := range devicelist {
-		log.Printf("* slave address %d: type %s\r\n", device.BusId,
+		log.Printf("* slave address %d: type %s\r\n", device.BusID,
 			device.DeviceType)
 	}
 	log.Println("WARNING: This lists only the devices that responded to " +
@@ -311,7 +311,7 @@ func (q *ModbusEngine) Scan() {
 		"different function code definitions might not be detected.")
 }
 
-// Transform functions to convert RTU bytes to meaningfull data types.
+// RTUTransform transform functions to convert RTU bytes to meaningfull data types.
 type RTUTransform func([]byte) float64
 
 func rtuScaledIntToFloat64(b []byte, scalar float64) float64 {

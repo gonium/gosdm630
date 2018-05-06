@@ -3,14 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gonium/gosdm630"
-	"gopkg.in/urfave/cli.v1"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/gonium/gosdm630"
+	"gopkg.in/urfave/cli.v1"
 )
 
 // Copied from
@@ -63,11 +64,11 @@ func main() {
 		if !c.IsSet("device") {
 			log.Fatal("No device id given -- aborting. See --help for more information")
 		}
-		endpointUrl :=
+		endpointURL :=
 			fmt.Sprintf("http://%s/firehose?timeout=%d&category=%s",
 				c.String("url"), c.Int("timeout"), c.String("category"))
 		if c.Bool("verbose") {
-			log.Printf("Client startup - will connect to %s", endpointUrl)
+			log.Printf("Client startup - will connect to %s", endpointURL)
 		}
 		client := &http.Client{
 			Timeout: time.Duration(c.Int("timeout")) * time.Second,
@@ -85,7 +86,7 @@ func main() {
 			},
 		}
 		for {
-			resp, err := client.Get(endpointUrl)
+			resp, err := client.Get(endpointURL)
 			if err != nil {
 				log.Fatal("Failed to read from endpoint: ", err.Error())
 			}
@@ -101,15 +102,15 @@ func main() {
 				}
 				for _, event := range *events.Events {
 					snip := event.Data
-					if snip.DeviceId == uint8(c.Int("device")) {
+					if snip.DeviceID == uint8(c.Int("device")) {
 						if snip.IEC61850 == "WLocPhsA" {
-							log.Printf("Device %d: L1 %.2f W", snip.DeviceId, snip.Value)
+							log.Printf("Device %d: L1 %.2f W", snip.DeviceID, snip.Value)
 						}
 						if snip.IEC61850 == "WLocPhsB" {
-							log.Printf("Device %d: L2 %.2f W", snip.DeviceId, snip.Value)
+							log.Printf("Device %d: L2 %.2f W", snip.DeviceID, snip.Value)
 						}
 						if snip.IEC61850 == "WLocPhsC" {
-							log.Printf("Device %d: L3 %.2f W", snip.DeviceId, snip.Value)
+							log.Printf("Device %d: L3 %.2f W", snip.DeviceID, snip.Value)
 						}
 					}
 				}

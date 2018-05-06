@@ -5,13 +5,14 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"github.com/boltdb/bolt"
-	"github.com/gonium/gosdm630"
 	"io"
 	"log"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/boltdb/bolt"
+	"github.com/gonium/gosdm630"
 )
 
 const (
@@ -182,7 +183,7 @@ func (db *SnipDB) ExportCSV(csvfile string) error {
 		c := b.Cursor()
 
 		for k, v := c.First(); k != nil; k, v = c.Next() {
-			numSnips += 1
+			numSnips++
 			var snip sdm630.QuerySnip
 			err := json.Unmarshal(v, &snip)
 			if err != nil {
@@ -193,13 +194,13 @@ func (db *SnipDB) ExportCSV(csvfile string) error {
 			// TODO: Export all snips
 			switch snip.IEC61850 {
 			case "WLocPhsA":
-				fmt.Fprintf(w, "%d\t%s\t%.2f\t\t\n", snip.DeviceId,
+				fmt.Fprintf(w, "%d\t%s\t%.2f\t\t\n", snip.DeviceID,
 					snip.ReadTimestamp, snip.Value)
 			case "WLocPhsB":
-				fmt.Fprintf(w, "%d\t%s\t\t%.2f\t\n", snip.DeviceId,
+				fmt.Fprintf(w, "%d\t%s\t\t%.2f\t\n", snip.DeviceID,
 					snip.ReadTimestamp, snip.Value)
 			case "WLocPhsC":
-				fmt.Fprintf(w, "%d\t%s\t\t\t%.2f\n", snip.DeviceId,
+				fmt.Fprintf(w, "%d\t%s\t\t\t%.2f\n", snip.DeviceID,
 					snip.ReadTimestamp, snip.Value)
 			default:
 				continue

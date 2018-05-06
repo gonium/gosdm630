@@ -3,15 +3,16 @@ package sdm630
 import (
 	"bytes"
 	"fmt"
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
-	"github.com/jcuga/golongpoll"
 	"html/template"
 	"log"
 	"net/http"
 	"runtime"
 	"strconv"
 	"time"
+
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
+	"github.com/jcuga/golongpoll"
 )
 
 const (
@@ -21,7 +22,7 @@ const (
 // Generate the embedded assets using https://github.com/aprice/embed
 //go:generate embed -c "embed.json"
 
-func MkIndexHandler(hc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
+func mkIndexHandler(hc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
 	loader := GetEmbeddedContent()
 	mainTemplate, err := loader.GetContents("/index.tmpl")
 	if err != nil {
@@ -49,7 +50,7 @@ func MkIndexHandler(hc *MeasurementCache) func(http.ResponseWriter, *http.Reques
 	})
 }
 
-func MkLastAllValuesHandler(hc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
+func mkLastAllValuesHandler(hc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
@@ -77,7 +78,7 @@ func MkLastAllValuesHandler(hc *MeasurementCache) func(http.ResponseWriter, *htt
 	})
 }
 
-func MkLastSingleValuesHandler(hc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
+func mkLastSingleValuesHandler(hc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		vars := mux.Vars(r)
@@ -99,7 +100,7 @@ func MkLastSingleValuesHandler(hc *MeasurementCache) func(http.ResponseWriter, *
 	})
 }
 
-func MkLastMinuteAvgSingleHandler(hc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
+func mkLastMinuteAvgSingleHandler(hc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		vars := mux.Vars(r)
@@ -121,7 +122,7 @@ func MkLastMinuteAvgSingleHandler(hc *MeasurementCache) func(http.ResponseWriter
 	})
 }
 
-func MkLastMinuteAvgAllHandler(hc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
+func mkLastMinuteAvgAllHandler(hc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
@@ -147,7 +148,7 @@ func MkLastMinuteAvgAllHandler(hc *MeasurementCache) func(http.ResponseWriter, *
 	})
 }
 
-func MkStatusHandler(s *Status) func(http.ResponseWriter, *http.Request) {
+func mkStatusHandler(s *Status) func(http.ResponseWriter, *http.Request) {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
@@ -223,19 +224,20 @@ func (f *Firehose) GetHandler() func(w http.ResponseWriter, r *http.Request) {
 	return f.lpManager.SubscriptionHandler
 }
 
-func Run_httpd(
+// RunHTTPD starts httpd server
+func RunHTTPD(
 	mc *MeasurementCache,
 	firehose *Firehose,
 	s *Status,
 	url string,
 ) {
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/", MkIndexHandler(mc))
-	router.HandleFunc("/last", MkLastAllValuesHandler(mc))
-	router.HandleFunc("/last/{id:[0-9]+}", MkLastSingleValuesHandler(mc))
-	router.HandleFunc("/minuteavg", MkLastMinuteAvgAllHandler(mc))
-	router.HandleFunc("/minuteavg/{id:[0-9]+}", MkLastMinuteAvgSingleHandler(mc))
-	router.HandleFunc("/status", MkStatusHandler(s))
+	router.HandleFunc("/", mkIndexHandler(mc))
+	router.HandleFunc("/last", mkLastAllValuesHandler(mc))
+	router.HandleFunc("/last/{id:[0-9]+}", mkLastSingleValuesHandler(mc))
+	router.HandleFunc("/minuteavg", mkLastMinuteAvgAllHandler(mc))
+	router.HandleFunc("/minuteavg/{id:[0-9]+}", mkLastMinuteAvgSingleHandler(mc))
+	router.HandleFunc("/status", mkStatusHandler(s))
 	router.HandleFunc("/firehose", firehose.GetHandler())
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/",
 		GetEmbeddedContent()))

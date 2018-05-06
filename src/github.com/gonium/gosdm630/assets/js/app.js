@@ -56,8 +56,9 @@ function pollStatusUpdates(since_time) {
 		url: firehose,
 		type: "GET",
 		success: function (result) {
-			var timestamp = result["events"][0]["timestamp"]
-			var payload = JSON.parse(result["events"][0]["data"])
+			var event = result["events"][0]
+			var timestamp = event["timestamp"]
+			var payload = JSON.parse(event["data"])
 			var meters = payload["ConfiguredMeters"]
 			var meter = meters[0]
 			var meterid = meter["Id"]

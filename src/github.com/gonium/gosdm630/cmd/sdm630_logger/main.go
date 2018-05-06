@@ -3,14 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gonium/gosdm630"
-	"gopkg.in/urfave/cli.v1"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/gonium/gosdm630"
+	"gopkg.in/urfave/cli.v1"
 )
 
 const (
@@ -125,7 +126,7 @@ func main() {
 							snip := event.Data
 							if c.GlobalBool("verbose") {
 								log.Printf("%s: device %d, %s: %.2f", snip.ReadTimestamp,
-									snip.DeviceId, snip.IEC61850, snip.Value)
+									snip.DeviceID, snip.IEC61850, snip.Value)
 							}
 							db.AddSnip(snip)
 						}
