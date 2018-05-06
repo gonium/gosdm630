@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/gonium/gosdm630"
-	"gopkg.in/urfave/cli.v1"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gonium/gosdm630"
+	"gopkg.in/urfave/cli.v1"
 )
 
 const (
@@ -66,9 +67,8 @@ func main() {
 		},
 	}
 	app.Action = func(c *cli.Context) {
-
 		// Set unique ID format
-		sdm630.UniqueIdFormat = c.String("unique_id_format")
+		sdm630.UniqueIDFormat = c.String("unique_id_format")
 
 		// Parse the device_list parameter
 		deviceslice := strings.Split(c.String("device_list"), ",")
@@ -162,7 +162,7 @@ func main() {
 		go mc.Consume()
 
 		log.Printf("Starting API httpd at %s", c.String("url"))
-		sdm630.Run_httpd(
+		sdm630.RunHTTPD(
 			mc,
 			firehose,
 			status,

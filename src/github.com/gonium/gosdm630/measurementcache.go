@@ -26,13 +26,13 @@ func NewMeasurementCache(meters map[uint8]*Meter, ds QuerySnipChannel, secondsTo
 func (mc *MeasurementCache) Consume() {
 	for {
 		snip := <-mc.datastream
-		devid := snip.DeviceId
+		devid := snip.DeviceID
 		// Search corresponding meter
 		if meter, ok := mc.meters[devid]; ok {
 			// add the snip to the meter's cache
 			meter.AddSnip(snip)
 			if mc.verbose {
-				log.Printf("%s\r\n", meter.MeterReadings.Lastreading.String())
+				log.Printf("%s\r\n", meter.MeterReadings.LastReading.String())
 			}
 		} else {
 			log.Fatal("Snip for unknown meter received - this should not happen.")
@@ -41,8 +41,8 @@ func (mc *MeasurementCache) Consume() {
 }
 
 func (mc *MeasurementCache) GetSortedIDs() []byte {
-	var keys ByteSlice
-	for k, _ := range mc.meters {
+	var keys byteSlice
+	for k := range mc.meters {
 		keys = append(keys, k)
 	}
 	sort.Sort(keys)
@@ -52,7 +52,7 @@ func (mc *MeasurementCache) GetSortedIDs() []byte {
 func (mc *MeasurementCache) GetLast(id byte) (*Readings, error) {
 	if meter, ok := mc.meters[id]; ok {
 		if meter.GetState() == METERSTATE_AVAILABLE {
-			return &meter.MeterReadings.Lastreading, nil
+			return &meter.MeterReadings.LastReading, nil
 		} else {
 			return nil, fmt.Errorf("Meter %d is not available.", id)
 		}
@@ -66,7 +66,7 @@ func (mc *MeasurementCache) GetMinuteAvg(id byte) (*Readings, error) {
 		return nil, fmt.Errorf("No device with id %d available.", id)
 	} else {
 		if meter.GetState() == METERSTATE_AVAILABLE {
-			measurements := meter.MeterReadings.Lastminutereadings
+			measurements := meter.MeterReadings.LastMinuteReadings
 			lastminute := measurements.NotOlderThan(time.Now().Add(-1 *
 				time.Minute))
 			var err error
@@ -94,10 +94,10 @@ func (mc *MeasurementCache) GetMinuteAvg(id byte) (*Readings, error) {
 	}
 }
 
+// byteSlice attaches the methods of sort.Interface to []byte, sorting in increasing order.
 // Helper for dealing with Modbus device ids (bytes).
-// ByteSlice attaches the methods of sort.Interface to []byte, sorting in increasing order.
-type ByteSlice []byte
+type byteSlice []byte
 
-func (s ByteSlice) Len() int           { return len(s) }
-func (s ByteSlice) Less(i, j int) bool { return s[i] < s[j] }
-func (s ByteSlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s byteSlice) Len() int           { return len(s) }
+func (s byteSlice) Less(i, j int) bool { return s[i] < s[j] }
+func (s byteSlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }

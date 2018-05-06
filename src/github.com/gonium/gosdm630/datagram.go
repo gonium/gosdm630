@@ -9,12 +9,12 @@ import (
 	"time"
 )
 
-// UniqueIdFormat is a format string for unique ID generation.
+// UniqueIDFormat is a format string for unique ID generation.
 // It expects one %d conversion specifier,
 // which will be replaced with the device ID.
-// The UniqueIdFormat can be changed on program startup,
+// The UniqueIDFormat can be changed on program startup,
 // before any additional goroutines are started.
-var UniqueIdFormat string = "Instrument%d"
+var UniqueIDFormat string = "Instrument%d"
 
 /***
  * This is the definition of the Reading datatype. It combines readings
@@ -24,10 +24,10 @@ var UniqueIdFormat string = "Instrument%d"
 type ReadingChannel chan Readings
 
 type Readings struct {
-	UniqueId       string
+	UniqueID       string
 	Timestamp      time.Time
 	Unix           int64
-	ModbusDeviceId uint8
+	ModbusDeviceID uint8
 	Power          ThreePhaseReadings
 	Voltage        ThreePhaseReadings
 	Current        ThreePhaseReadings
@@ -52,7 +52,7 @@ type ThreePhaseReadings struct {
 	L3 *float64
 }
 
-// Helper: Converts float64 to *float64
+// F2fp helper converts float64 to *float64
 func F2fp(x float64) *float64 {
 	if math.IsNaN(x) {
 		return nil
@@ -61,7 +61,7 @@ func F2fp(x float64) *float64 {
 	}
 }
 
-// Helper: Converts *float64 to float64, correctly handles uninitialized
+// Fp2f Helper converts *float64 to float64, correctly handles uninitialized
 // variables
 func Fp2f(x *float64) float64 {
 	if x == nil {
@@ -77,8 +77,8 @@ func (r *Readings) String() string {
 		"L2: %.2fV %.2fA %.2fW %.2fcos | " +
 		"L3: %.2fV %.2fA %.2fW %.2fcos"
 	return fmt.Sprintf(fmtString,
-		r.UniqueId,
-		r.ModbusDeviceId,
+		r.UniqueID,
+		r.ModbusDeviceID,
 		r.Timestamp.Format(time.RFC3339),
 		Fp2f(r.Voltage.L1),
 		Fp2f(r.Current.L1),
@@ -107,74 +107,74 @@ func (r *Readings) IsOlderThan(ts time.Time) (retval bool) {
 }
 
 /*
-* Adds two readings. The individual values are added except for
-* the time: the latter of the two times is copied over to the result
+ * Adds two readings. The individual values are added except for
+ * the time: the latter of the two times is copied over to the result
  */
 func (lhs *Readings) add(rhs *Readings) (retval Readings, err error) {
-	if lhs.ModbusDeviceId != rhs.ModbusDeviceId {
+	if lhs.ModbusDeviceID != rhs.ModbusDeviceID {
 		return Readings{}, fmt.Errorf(
 			"Cannot add readings of different devices - got IDs %d and %d",
-			lhs.ModbusDeviceId, rhs.ModbusDeviceId)
-	} else {
-		retval = Readings{
-			UniqueId:       lhs.UniqueId,
-			ModbusDeviceId: lhs.ModbusDeviceId,
-			Voltage: ThreePhaseReadings{
-				L1: F2fp(Fp2f(lhs.Voltage.L1) + Fp2f(rhs.Voltage.L1)),
-				L2: F2fp(Fp2f(lhs.Voltage.L2) + Fp2f(rhs.Voltage.L2)),
-				L3: F2fp(Fp2f(lhs.Voltage.L3) + Fp2f(rhs.Voltage.L3)),
-			},
-			Current: ThreePhaseReadings{
-				L1: F2fp(Fp2f(lhs.Current.L1) + Fp2f(rhs.Current.L1)),
-				L2: F2fp(Fp2f(lhs.Current.L2) + Fp2f(rhs.Current.L2)),
-				L3: F2fp(Fp2f(lhs.Current.L3) + Fp2f(rhs.Current.L3)),
-			},
-			Power: ThreePhaseReadings{
-				L1: F2fp(Fp2f(lhs.Power.L1) + Fp2f(rhs.Power.L1)),
-				L2: F2fp(Fp2f(lhs.Power.L2) + Fp2f(rhs.Power.L2)),
-				L3: F2fp(Fp2f(lhs.Power.L3) + Fp2f(rhs.Power.L3)),
-			},
-			Cosphi: ThreePhaseReadings{
-				L1: F2fp(Fp2f(lhs.Cosphi.L1) + Fp2f(rhs.Cosphi.L1)),
-				L2: F2fp(Fp2f(lhs.Cosphi.L2) + Fp2f(rhs.Cosphi.L2)),
-				L3: F2fp(Fp2f(lhs.Cosphi.L3) + Fp2f(rhs.Cosphi.L3)),
-			},
-			Import: ThreePhaseReadings{
-				L1: F2fp(Fp2f(lhs.Import.L1) + Fp2f(rhs.Import.L1)),
-				L2: F2fp(Fp2f(lhs.Import.L2) + Fp2f(rhs.Import.L2)),
-				L3: F2fp(Fp2f(lhs.Import.L3) + Fp2f(rhs.Import.L3)),
-			},
-			TotalImport: F2fp(Fp2f(lhs.TotalImport) +
-				Fp2f(rhs.TotalImport)),
-			Export: ThreePhaseReadings{
-				L1: F2fp(Fp2f(lhs.Export.L1) + Fp2f(rhs.Export.L1)),
-				L2: F2fp(Fp2f(lhs.Export.L2) + Fp2f(rhs.Export.L2)),
-				L3: F2fp(Fp2f(lhs.Export.L3) + Fp2f(rhs.Export.L3)),
-			},
-			TotalExport: F2fp(Fp2f(lhs.TotalExport) +
-				Fp2f(rhs.TotalExport)),
-			THD: THDInfo{
-				VoltageNeutral: ThreePhaseReadings{
-					L1: F2fp(Fp2f(lhs.THD.VoltageNeutral.L1) +
-						Fp2f(rhs.THD.VoltageNeutral.L1)),
-					L2: F2fp(Fp2f(lhs.THD.VoltageNeutral.L2) +
-						Fp2f(rhs.THD.VoltageNeutral.L2)),
-					L3: F2fp(Fp2f(lhs.THD.VoltageNeutral.L3) +
-						Fp2f(rhs.THD.VoltageNeutral.L3)),
-				},
-				AvgVoltageNeutral: F2fp(Fp2f(lhs.THD.AvgVoltageNeutral) +
-					Fp2f(rhs.THD.AvgVoltageNeutral)),
-			},
-		}
-		if lhs.Timestamp.After(rhs.Timestamp) {
-			retval.Timestamp = lhs.Timestamp
-			retval.Unix = lhs.Unix
-		} else {
-			retval.Timestamp = rhs.Timestamp
-			retval.Unix = rhs.Unix
-		}
-		return retval, nil
+			lhs.ModbusDeviceID, rhs.ModbusDeviceID)
 	}
+
+	retval = Readings{
+		UniqueID:       lhs.UniqueID,
+		ModbusDeviceID: lhs.ModbusDeviceID,
+		Voltage: ThreePhaseReadings{
+			L1: F2fp(Fp2f(lhs.Voltage.L1) + Fp2f(rhs.Voltage.L1)),
+			L2: F2fp(Fp2f(lhs.Voltage.L2) + Fp2f(rhs.Voltage.L2)),
+			L3: F2fp(Fp2f(lhs.Voltage.L3) + Fp2f(rhs.Voltage.L3)),
+		},
+		Current: ThreePhaseReadings{
+			L1: F2fp(Fp2f(lhs.Current.L1) + Fp2f(rhs.Current.L1)),
+			L2: F2fp(Fp2f(lhs.Current.L2) + Fp2f(rhs.Current.L2)),
+			L3: F2fp(Fp2f(lhs.Current.L3) + Fp2f(rhs.Current.L3)),
+		},
+		Power: ThreePhaseReadings{
+			L1: F2fp(Fp2f(lhs.Power.L1) + Fp2f(rhs.Power.L1)),
+			L2: F2fp(Fp2f(lhs.Power.L2) + Fp2f(rhs.Power.L2)),
+			L3: F2fp(Fp2f(lhs.Power.L3) + Fp2f(rhs.Power.L3)),
+		},
+		Cosphi: ThreePhaseReadings{
+			L1: F2fp(Fp2f(lhs.Cosphi.L1) + Fp2f(rhs.Cosphi.L1)),
+			L2: F2fp(Fp2f(lhs.Cosphi.L2) + Fp2f(rhs.Cosphi.L2)),
+			L3: F2fp(Fp2f(lhs.Cosphi.L3) + Fp2f(rhs.Cosphi.L3)),
+		},
+		Import: ThreePhaseReadings{
+			L1: F2fp(Fp2f(lhs.Import.L1) + Fp2f(rhs.Import.L1)),
+			L2: F2fp(Fp2f(lhs.Import.L2) + Fp2f(rhs.Import.L2)),
+			L3: F2fp(Fp2f(lhs.Import.L3) + Fp2f(rhs.Import.L3)),
+		},
+		TotalImport: F2fp(Fp2f(lhs.TotalImport) +
+			Fp2f(rhs.TotalImport)),
+		Export: ThreePhaseReadings{
+			L1: F2fp(Fp2f(lhs.Export.L1) + Fp2f(rhs.Export.L1)),
+			L2: F2fp(Fp2f(lhs.Export.L2) + Fp2f(rhs.Export.L2)),
+			L3: F2fp(Fp2f(lhs.Export.L3) + Fp2f(rhs.Export.L3)),
+		},
+		TotalExport: F2fp(Fp2f(lhs.TotalExport) +
+			Fp2f(rhs.TotalExport)),
+		THD: THDInfo{
+			VoltageNeutral: ThreePhaseReadings{
+				L1: F2fp(Fp2f(lhs.THD.VoltageNeutral.L1) +
+					Fp2f(rhs.THD.VoltageNeutral.L1)),
+				L2: F2fp(Fp2f(lhs.THD.VoltageNeutral.L2) +
+					Fp2f(rhs.THD.VoltageNeutral.L2)),
+				L3: F2fp(Fp2f(lhs.THD.VoltageNeutral.L3) +
+					Fp2f(rhs.THD.VoltageNeutral.L3)),
+			},
+			AvgVoltageNeutral: F2fp(Fp2f(lhs.THD.AvgVoltageNeutral) +
+				Fp2f(rhs.THD.AvgVoltageNeutral)),
+		},
+	}
+	if lhs.Timestamp.After(rhs.Timestamp) {
+		retval.Timestamp = lhs.Timestamp
+		retval.Unix = lhs.Unix
+	} else {
+		retval.Timestamp = rhs.Timestamp
+		retval.Unix = rhs.Unix
+	}
+	return retval, nil
 }
 
 /*
@@ -227,8 +227,8 @@ func (lhs *Readings) divide(scalar float64) (retval Readings) {
 	}
 	retval.Timestamp = lhs.Timestamp
 	retval.Unix = lhs.Unix
-	retval.ModbusDeviceId = lhs.ModbusDeviceId
-	retval.UniqueId = lhs.UniqueId
+	retval.ModbusDeviceID = lhs.ModbusDeviceID
+	retval.UniqueID = lhs.UniqueID
 	return retval
 }
 
@@ -256,7 +256,7 @@ func (r ReadingSlice) NotOlderThan(ts time.Time) (retval ReadingSlice) {
  */
 
 type QuerySnip struct {
-	DeviceId      uint8
+	DeviceID      uint8
 	FuncCode      uint8  `json:"-"`
 	OpCode        uint16 `json:"-"`
 	Value         float64
@@ -341,17 +341,17 @@ func (r *Readings) MergeSnip(q QuerySnip) {
 
 func (q QuerySnip) String() string {
 	return fmt.Sprintf("DevID: %d, FunCode: %d, Opcode %x: Value: %.3f",
-		q.DeviceId, q.FuncCode, q.OpCode, q.Value)
+		q.DeviceID, q.FuncCode, q.OpCode, q.Value)
 }
 
-/***
- * A Controlsnip wraps control information such as query success or
+/**
+ * ControlSnip wraps control information such as query success or
  * failure.
  */
 type ControlSnip struct {
 	Type     ControlSnipType
 	Message  string
-	DeviceId uint8
+	DeviceID uint8
 }
 
 type ControlSnipType uint8

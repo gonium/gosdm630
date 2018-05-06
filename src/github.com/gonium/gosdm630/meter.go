@@ -23,7 +23,7 @@ const (
 
 type Meter struct {
 	Type          MeterType
-	DeviceId      uint8
+	DeviceID      uint8
 	Scheduler     Scheduler
 	MeterReadings *MeterReadings
 	state         MeterState
@@ -40,7 +40,7 @@ func NewMeter(
 	return &Meter{
 		Type:          typeid,
 		Scheduler:     scheduler,
-		DeviceId:      devid,
+		DeviceID:      devid,
 		MeterReadings: r,
 		state:         METERSTATE_AVAILABLE,
 	}
@@ -51,7 +51,7 @@ func (m *Meter) UpdateState(newstate MeterState) {
 	defer m.mux.Unlock()
 	m.state = newstate
 	if newstate == METERSTATE_UNAVAILABLE {
-		m.MeterReadings.Purge(m.DeviceId)
+		m.MeterReadings.Purge(m.DeviceID)
 	}
 }
 
@@ -83,27 +83,27 @@ func (m *Meter) AddSnip(snip QuerySnip) {
 }
 
 type MeterReadings struct {
-	Lastminutereadings ReadingSlice
-	Lastreading        Readings
+	LastMinuteReadings ReadingSlice
+	LastReading        Readings
 }
 
 func NewMeterReadings(devid uint8, secondsToStore time.Duration) (retval *MeterReadings) {
 	reading := Readings{
-		UniqueId:       fmt.Sprintf(UniqueIdFormat, devid),
-		ModbusDeviceId: devid,
+		UniqueID:       fmt.Sprintf(UniqueIDFormat, devid),
+		ModbusDeviceID: devid,
 	}
 	retval = &MeterReadings{
-		Lastminutereadings: ReadingSlice{},
-		Lastreading:        reading,
+		LastMinuteReadings: ReadingSlice{},
+		LastReading:        reading,
 	}
 	go func() {
 		for {
 			time.Sleep(secondsToStore)
-			//before := len(retval.lastminutereadings)
-			retval.Lastminutereadings =
-				retval.Lastminutereadings.NotOlderThan(time.Now().Add(-1 *
+			//before := len(retval.LastMinuteReadings)
+			retval.LastMinuteReadings =
+				retval.LastMinuteReadings.NotOlderThan(time.Now().Add(-1 *
 					secondsToStore))
-			//after := len(retval.lastminutereadings)
+			//after := len(retval.LastMinuteReadings)
 			//fmt.Printf("Cache cleanup: Before %d, after %d\r\n", before, after)
 		}
 	}()
@@ -111,18 +111,18 @@ func NewMeterReadings(devid uint8, secondsToStore time.Duration) (retval *MeterR
 }
 
 func (mr *MeterReadings) Purge(devid uint8) {
-	mr.Lastminutereadings = ReadingSlice{}
-	mr.Lastreading = Readings{
-		UniqueId:       fmt.Sprintf(UniqueIdFormat, devid),
-		ModbusDeviceId: devid,
+	mr.LastMinuteReadings = ReadingSlice{}
+	mr.LastReading = Readings{
+		UniqueID:       fmt.Sprintf(UniqueIDFormat, devid),
+		ModbusDeviceID: devid,
 	}
 }
 
 func (mr *MeterReadings) AddSnip(snip QuerySnip) {
 	// 1. Merge the snip to the last values.
-	reading := mr.Lastreading
+	reading := mr.LastReading
 	reading.MergeSnip(snip)
 	// 2. store it
-	mr.Lastreading = reading
-	mr.Lastminutereadings = append(mr.Lastminutereadings, reading)
+	mr.LastReading = reading
+	mr.LastMinuteReadings = append(mr.LastMinuteReadings, reading)
 }
