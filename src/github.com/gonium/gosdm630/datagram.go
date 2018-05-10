@@ -266,6 +266,23 @@ type QuerySnip struct {
 	Transform     RTUTransform `json:"-"`
 }
 
+// MarshalJSON converts QuerySnip to json, replaceing ReadTimestamp with unix tiem representation
+func (q *QuerySnip) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		DeviceId    uint8
+		Value       float64
+		IEC61850    string
+		Description string
+		Timestamp   int64
+	}{
+		DeviceId:    q.DeviceId,
+		Value:       q.Value,
+		IEC61850:    q.IEC61850,
+		Description: q.Description,
+		Timestamp:   q.ReadTimestamp.UnixNano() / 1e6,
+	})
+}
+
 type QuerySnipChannel chan QuerySnip
 
 /**
