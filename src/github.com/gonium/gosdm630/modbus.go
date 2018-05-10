@@ -3,11 +3,12 @@ package sdm630
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/goburrow/modbus"
 	"log"
 	"math"
 	"os"
 	"time"
+
+	"github.com/goburrow/modbus"
 )
 
 const (
@@ -205,7 +206,7 @@ func (q *ModbusEngine) Transform(
 	controlStream ControlSnipChannel,
 	outputStream QuerySnipChannel,
 ) {
-	var previousDeviceId uint8 = 0
+	var previousDeviceId uint8
 	for {
 		snip := <-inputStream
 		// The SDM devices need to have a little pause between querying
