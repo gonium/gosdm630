@@ -216,11 +216,8 @@ func main() {
 		}
 
 		// Websocket hub
-		// var socket *sdm630.SocketHub
-		// if true {
-		// 	tee2socket := make(sdm630.QuerySnipChannel)
-		// 	snipTee = append(snipTee, tee2socket)
-		// }
+		hub := sdm630.NewSocketHub(tee.Attach(), status)
+		go hub.Run()
 
 		// MQTT client
 		if c.String("broker") != "" {
@@ -242,6 +239,7 @@ func main() {
 		sdm630.Run_httpd(
 			mc,
 			firehose,
+			hub,
 			status,
 			c.String("url"),
 		)
