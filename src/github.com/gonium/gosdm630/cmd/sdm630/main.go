@@ -1,0 +1,254 @@
+package main
+
+import (
+	"log"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/gonium/gosdm630"
+	"gopkg.in/urfave/cli.v1"
+)
+
+const (
+	DEFAULT_METER_STORE_SECONDS = 120 * time.Second
+)
+
+func main() {
+	app := cli.NewApp()
+	app.Name = "sdm630"
+	app.Usage = "SDM630 daemon"
+	app.Version = sdm630.RELEASEVERSION
+	app.HideVersion = true
+	app.Flags = []cli.Flag{
+		// general
+		cli.StringFlag{
+			Name:  "serialadapter, s",
+			Value: "/dev/ttyUSB0",
+			Usage: "path to serial RTU device",
+		},
+		cli.IntFlag{
+			Name:  "comset, c",
+			Value: sdm630.ModbusComset9600_8N1,
+			Usage: `which communication parameter set to use. Valid sets are
+		` + strconv.Itoa(sdm630.ModbusComset2400_8N1) + `:  2400 baud, 8N1
+		` + strconv.Itoa(sdm630.ModbusComset9600_8N1) + `:  9600 baud, 8N1
+		` + strconv.Itoa(sdm630.ModbusComset19200_8N1) + `: 19200 baud, 8N1
+		` + strconv.Itoa(sdm630.ModbusComset2400_8E1) + `:  2400 baud, 8E1
+		` + strconv.Itoa(sdm630.ModbusComset9600_8E1) + `:  9600 baud, 8E1
+		` + strconv.Itoa(sdm630.ModbusComset19200_8E1) + `: 19200 baud, 8E1
+			`,
+		},
+		cli.StringFlag{
+			Name:  "device_list, d",
+			Value: "SDM:1",
+			Usage: `MODBUS device type and ID to query, separated by comma.
+			Valid types are:
+			"SDM" for Eastron SDM meters
+			"JANITZA" for Janitza B-Series DIN-Rail meters
+			"DZG" for the DZG Metering GmbH DVH4013 DIN-Rail meter
+			Example: -d JANITZA:1,SDM:22,DZG:23`,
+		},
+		cli.StringFlag{
+			Name:  "unique_id_format, f",
+			Value: "Instrument%d",
+			Usage: `Unique ID format.
+			Example: -f Instrument%d
+			The %d is replaced by the device ID`,
+		},
+		cli.BoolFlag{
+			Name:  "verbose, v",
+			Usage: "print verbose messages",
+		},
+
+		// http api
+		cli.StringFlag{
+			Name:  "url, u",
+			Value: ":8080",
+			Usage: "the URL the server should respond on",
+		},
+
+		// mqtt api
+		cli.StringFlag{
+			Name:  "broker, b",
+			Value: "",
+			Usage: "MQTT: The broker URI. ex: tcp://10.10.1.1:1883",
+			// Destination: &mqttBroker,
+		},
+		cli.StringFlag{
+			Name:  "topic, t",
+			Value: "sdm630/",
+			Usage: "MQTT: The topic name to/from which to publish/subscribe (optional)",
+			// Destination: &mqttTopic,
+		},
+		cli.StringFlag{
+			Name:  "user",
+			Value: "",
+			Usage: "MQTT: The User (optional)",
+			// Destination: &mqttUser,
+		},
+		cli.StringFlag{
+			Name:  "password",
+			Value: "",
+			Usage: "MQTT: The password (optional)",
+			// Destination: &mqttPassword,
+		},
+		cli.StringFlag{
+			Name:  "clientid, i",
+			Value: "sdm630",
+			Usage: "MQTT: The ClientID (optional)",
+			// Destination: &mqttClientID,
+		},
+		cli.IntFlag{
+			Name:  "rate, r",
+			Value: 0,
+			Usage: "MQTT: The maximum update rate (default 0, i.e. unlimited) (after a push we will ignore more data from same device and channel for this time)",
+			// Destination: &mqttRate,
+		},
+		cli.BoolFlag{
+			Name:  "clean, l",
+			Usage: "MQTT: Set Clean Session (default false)",
+			// Destination: &mqttCleanSession,
+		},
+		cli.IntFlag{
+			Name:  "qos, q",
+			Value: 0,
+			Usage: "MQTT: The Quality of Service 0,1,2 (default 0)",
+			// Destination: &mqttQos,
+		},
+	}
+
+	app.Action = func(c *cli.Context) {
+		// Set unique ID format
+		sdm630.UniqueIdFormat = c.String("unique_id_format")
+
+		// Parse the device_list parameter
+		deviceslice := strings.Split(c.String("device_list"), ",")
+		meters := make(map[uint8]*sdm630.Meter)
+		for _, meterdef := range deviceslice {
+			var meter *sdm630.Meter
+			splitdef := strings.Split(meterdef, ":")
+			if len(splitdef) != 2 {
+				log.Fatalf("Cannot parse device definition %s. See -h for help.", meterdef)
+			}
+			metertype, devid := splitdef[0], splitdef[1]
+			id, err := strconv.Atoi(devid)
+			if err != nil {
+				log.Fatalf("Error parsing device id %s: %s. See -h for help.", meterdef, err.Error())
+			}
+			metertype = strings.ToUpper(metertype)
+			switch metertype {
+			case sdm630.METERTYPE_JANITZA:
+				meter = sdm630.NewMeter(sdm630.METERTYPE_JANITZA,
+					uint8(id), sdm630.NewJanitzaRoundRobinScheduler(),
+					DEFAULT_METER_STORE_SECONDS)
+			case sdm630.METERTYPE_SDM:
+				meter = sdm630.NewMeter(sdm630.METERTYPE_SDM,
+					uint8(id), sdm630.NewSDMRoundRobinScheduler(),
+					DEFAULT_METER_STORE_SECONDS)
+			case sdm630.METERTYPE_DZG:
+				log.Println(`WARNING: The DZG DVH 4013 does not report the same
+				measurements as the other meters. Only limited functionality is
+				implemented.`)
+				meter = sdm630.NewMeter(sdm630.METERTYPE_DZG,
+					uint8(id), sdm630.NewDZGRoundRobinScheduler(),
+					DEFAULT_METER_STORE_SECONDS)
+			default:
+				log.Fatalf("Unknown meter type %s for device %d. See -h for help.", metertype, id)
+			}
+			meters[uint8(id)] = meter
+		}
+
+		status := sdm630.NewStatus(meters)
+
+		// Create Channels that link the goroutines
+		var scheduler2queryengine = make(sdm630.QuerySnipChannel)
+		var queryengine2scheduler = make(sdm630.ControlSnipChannel)
+		var queryengine2tee = make(sdm630.QuerySnipChannel)
+
+		scheduler := sdm630.NewMeterScheduler(
+			scheduler2queryengine,
+			queryengine2scheduler,
+			meters,
+		)
+		go scheduler.Run()
+
+		qe := sdm630.NewModbusEngine(
+			c.String("serialadapter"),
+			c.Int("comset"),
+			c.Bool("verbose"),
+			status,
+		)
+
+		go qe.Transform(
+			scheduler2queryengine, // input
+			queryengine2scheduler, // error
+			queryengine2tee,       // output
+		)
+
+		var snipTee = make([]sdm630.QuerySnipChannel, 3)
+
+		tee2cache := make(sdm630.QuerySnipChannel)
+		snipTee = append(snipTee, tee2cache)
+		mc := sdm630.NewMeasurementCache(
+			meters,
+			tee2cache,
+			DEFAULT_METER_STORE_SECONDS,
+			c.Bool("verbose"),
+		)
+		go mc.Consume()
+
+		var firehose *sdm630.Firehose
+		if false {
+			tee2firehose := make(sdm630.QuerySnipChannel)
+			snipTee = append(snipTee, tee2firehose)
+			firehose = sdm630.NewFirehose(tee2firehose,
+				status,
+				c.Bool("verbose"))
+			go firehose.Run()
+		}
+
+		// var socket *sdm630.SocketHub
+		// if true {
+		// 	tee2socket := make(sdm630.QuerySnipChannel)
+		// 	snipTee = append(snipTee, tee2socket)
+		// }
+
+		if c.String("broker") != "" {
+			tee2mqtt := make(sdm630.QuerySnipChannel)
+			snipTee = append(snipTee, tee2mqtt)
+			mqtt := sdm630.NewMqttClient(tee2mqtt,
+				c.String("broker"),
+				c.String("topic"),
+				c.String("user"),
+				c.String("password"),
+				c.String("clientid"),
+				c.Int("qos"),
+				c.Int("rate"),
+				c.Bool("clean"),
+				c.Bool("verbose"))
+			go mqtt.Run()
+		}
+
+		// Tee function responsible for QuerySnip broadcast
+		go func(in sdm630.QuerySnipChannel, tee []sdm630.QuerySnipChannel) {
+			for {
+				snip := <-in
+				for _, out := range tee {
+					out <- snip
+				}
+			}
+		}(queryengine2tee, snipTee)
+
+		log.Printf("Starting API httpd at %s", c.String("url"))
+		sdm630.Run_httpd(
+			mc,
+			firehose,
+			status,
+			c.String("url"),
+		)
+	}
+
+	app.Run(os.Args)
+}
