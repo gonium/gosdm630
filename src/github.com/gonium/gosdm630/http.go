@@ -248,7 +248,9 @@ func Run_httpd(
 	router.HandleFunc("/status", MkStatusHandler(s))
 
 	// longpoll
-	router.HandleFunc("/firehose", firehose.GetHandler())
+	if firehose != nil {
+		router.HandleFunc("/firehose", firehose.GetHandler())
+	}
 
 	// websocket
 	router.HandleFunc("/ws", MkSocketHandler(hub))
