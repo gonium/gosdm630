@@ -15,28 +15,6 @@ const (
 	DEFAULT_METER_STORE_SECONDS = 120 * time.Second
 )
 
-func createScheduler(meters map[uint8]*sdm630.Meter, qe *sdm630.ModbusEngine) sdm630.QuerySnipChannel {
-	// Create Channels that link the goroutines
-	var scheduler2queryengine = make(sdm630.QuerySnipChannel)
-	var queryengine2scheduler = make(sdm630.ControlSnipChannel)
-	var queryengine2tee = make(sdm630.QuerySnipChannel)
-
-	scheduler := sdm630.NewMeterScheduler(
-		scheduler2queryengine,
-		queryengine2scheduler,
-		meters,
-	)
-	go scheduler.Run()
-
-	go qe.Transform(
-		scheduler2queryengine, // input
-		queryengine2scheduler, // error
-		queryengine2tee,       // output
-	)
-
-	return queryengine2tee
-}
-
 func main() {
 	app := cli.NewApp()
 	app.Name = "sdm"
@@ -191,8 +169,11 @@ func main() {
 			status,
 		)
 
+		// scheduler and meter data channel
+		scheduler, snips := sdm630.SetupScheduler(meters, qe)
+		scheduler.Run()
+
 		// tee that broadcasts meter messages to multiple recipients
-		snips := createScheduler(meters, qe)
 		tee := sdm630.NewQuerySnipBroadcaster(snips)
 		go tee.Run()
 
@@ -205,7 +186,7 @@ func main() {
 		)
 		go mc.Consume()
 
-		// Longpoll firehose
+		// longpoll firehose
 		var firehose *sdm630.Firehose
 		if false {
 			firehose = sdm630.NewFirehose(
@@ -215,7 +196,7 @@ func main() {
 			go firehose.Run()
 		}
 
-		// Websocket hub
+		// websocket hub
 		hub := sdm630.NewSocketHub(tee.Attach(), status)
 		go hub.Run()
 

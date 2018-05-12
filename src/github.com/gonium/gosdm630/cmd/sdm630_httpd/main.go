@@ -108,69 +108,42 @@ func main() {
 			meters[uint8(id)] = meter
 		}
 
-		// Create Channels that link the goroutines
-		var scheduler2queryengine = make(sdm630.QuerySnipChannel)
-		var queryengine2scheduler = make(sdm630.ControlSnipChannel)
-		var queryengine2tee = make(sdm630.QuerySnipChannel)
-		var tee2cache = make(sdm630.QuerySnipChannel)
-		var tee2firehose = make(sdm630.QuerySnipChannel)
-		var tee2socket = make(sdm630.QuerySnipChannel)
-
-		scheduler := sdm630.NewMeterScheduler(
-			scheduler2queryengine,
-			queryengine2scheduler,
-			meters,
-		)
-		go scheduler.Run()
-
+		// create ModbusEngine with status
 		status := sdm630.NewStatus(meters)
-
-		// start modbus only if meters defined
-		if len(meters) > 0 {
-			qe := sdm630.NewModbusEngine(
-				c.String("serialadapter"),
-				c.Int("comset"),
-				c.Bool("verbose"),
-				status,
-			)
-
-			go qe.Transform(
-				scheduler2queryengine, // input
-				queryengine2scheduler, // error
-				queryengine2tee,       // output
-			)
-		}
-
-		// This is the tee
-		go func(in sdm630.QuerySnipChannel,
-			out1 sdm630.QuerySnipChannel,
-			out2 sdm630.QuerySnipChannel,
-			out3 sdm630.QuerySnipChannel,
-		) {
-			for {
-				snip := <-in
-				out1 <- snip
-				out2 <- snip
-				out3 <- snip
-			}
-		}(queryengine2tee, tee2cache,
-			tee2firehose, tee2socket)
-
-		firehose := sdm630.NewFirehose(tee2firehose,
+		qe := sdm630.NewModbusEngine(
+			c.String("serialadapter"),
+			c.Int("comset"),
+			c.Bool("verbose"),
 			status,
-			c.Bool("verbose"))
-		go firehose.Run()
+		)
 
-		hub := sdm630.NewSocketHub(tee2socket, status)
-		go hub.Run()
+		// scheduler and meter data channel
+		scheduler, snips := sdm630.SetupScheduler(meters, qe)
+		scheduler.Run()
 
+		// tee that broadcasts meter messages to multiple recipients
+		tee := sdm630.NewQuerySnipBroadcaster(snips)
+		go tee.Run()
+
+		// MeasurementCache for REST API
 		mc := sdm630.NewMeasurementCache(
 			meters,
-			tee2cache,
+			tee.Attach(),
 			DEFAULT_METER_STORE_SECONDS,
 			c.Bool("verbose"),
 		)
 		go mc.Consume()
+
+		// Longpoll firehose
+		firehose := sdm630.NewFirehose(
+			tee.Attach(),
+			status,
+			c.Bool("verbose"))
+		go firehose.Run()
+
+		// websocket hub
+		hub := sdm630.NewSocketHub(tee.Attach(), status)
+		go hub.Run()
 
 		log.Printf("Starting API httpd at %s", c.String("url"))
 		sdm630.Run_httpd(
