@@ -15,10 +15,32 @@ const (
 	DEFAULT_METER_STORE_SECONDS = 120 * time.Second
 )
 
+func createScheduler(meters map[uint8]*sdm630.Meter, qe *sdm630.ModbusEngine) sdm630.QuerySnipChannel {
+	// Create Channels that link the goroutines
+	var scheduler2queryengine = make(sdm630.QuerySnipChannel)
+	var queryengine2scheduler = make(sdm630.ControlSnipChannel)
+	var queryengine2tee = make(sdm630.QuerySnipChannel)
+
+	scheduler := sdm630.NewMeterScheduler(
+		scheduler2queryengine,
+		queryengine2scheduler,
+		meters,
+	)
+	go scheduler.Run()
+
+	go qe.Transform(
+		scheduler2queryengine, // input
+		queryengine2scheduler, // error
+		queryengine2tee,       // output
+	)
+
+	return queryengine2tee
+}
+
 func main() {
 	app := cli.NewApp()
-	app.Name = "sdm630"
-	app.Usage = "SDM630 daemon"
+	app.Name = "sdm"
+	app.Usage = "SDM modbus daemon"
 	app.Version = sdm630.RELEASEVERSION
 	app.HideVersion = true
 	app.Flags = []cli.Flag{
@@ -78,7 +100,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:  "topic, t",
-			Value: "sdm630/",
+			Value: "sdm630",
 			Usage: "MQTT: The topic name to/from which to publish/subscribe (optional)",
 			// Destination: &mqttTopic,
 		},
@@ -160,20 +182,8 @@ func main() {
 			meters[uint8(id)] = meter
 		}
 
+		// create ModbusEngine with status
 		status := sdm630.NewStatus(meters)
-
-		// Create Channels that link the goroutines
-		var scheduler2queryengine = make(sdm630.QuerySnipChannel)
-		var queryengine2scheduler = make(sdm630.ControlSnipChannel)
-		var queryengine2tee = make(sdm630.QuerySnipChannel)
-
-		scheduler := sdm630.NewMeterScheduler(
-			scheduler2queryengine,
-			queryengine2scheduler,
-			meters,
-		)
-		go scheduler.Run()
-
 		qe := sdm630.NewModbusEngine(
 			c.String("serialadapter"),
 			c.Int("comset"),
@@ -181,44 +191,41 @@ func main() {
 			status,
 		)
 
-		go qe.Transform(
-			scheduler2queryengine, // input
-			queryengine2scheduler, // error
-			queryengine2tee,       // output
-		)
+		// tee that broadcasts meter messages to multiple recipients
+		snips := createScheduler(meters, qe)
+		tee := sdm630.NewQuerySnipBroadcaster(snips)
+		go tee.Run()
 
-		var snipTee = make([]sdm630.QuerySnipChannel, 3)
-
-		tee2cache := make(sdm630.QuerySnipChannel)
-		snipTee = append(snipTee, tee2cache)
+		// MeasurementCache for REST API
 		mc := sdm630.NewMeasurementCache(
 			meters,
-			tee2cache,
+			tee.Attach(),
 			DEFAULT_METER_STORE_SECONDS,
 			c.Bool("verbose"),
 		)
 		go mc.Consume()
 
+		// Longpoll firehose
 		var firehose *sdm630.Firehose
 		if false {
-			tee2firehose := make(sdm630.QuerySnipChannel)
-			snipTee = append(snipTee, tee2firehose)
-			firehose = sdm630.NewFirehose(tee2firehose,
+			firehose = sdm630.NewFirehose(
+				tee.Attach(),
 				status,
 				c.Bool("verbose"))
 			go firehose.Run()
 		}
 
+		// Websocket hub
 		// var socket *sdm630.SocketHub
 		// if true {
 		// 	tee2socket := make(sdm630.QuerySnipChannel)
 		// 	snipTee = append(snipTee, tee2socket)
 		// }
 
+		// MQTT client
 		if c.String("broker") != "" {
-			tee2mqtt := make(sdm630.QuerySnipChannel)
-			snipTee = append(snipTee, tee2mqtt)
-			mqtt := sdm630.NewMqttClient(tee2mqtt,
+			mqtt := sdm630.NewMqttClient(
+				tee.Attach(),
 				c.String("broker"),
 				c.String("topic"),
 				c.String("user"),
@@ -230,16 +237,6 @@ func main() {
 				c.Bool("verbose"))
 			go mqtt.Run()
 		}
-
-		// Tee function responsible for QuerySnip broadcast
-		go func(in sdm630.QuerySnipChannel, tee []sdm630.QuerySnipChannel) {
-			for {
-				snip := <-in
-				for _, out := range tee {
-					out <- snip
-				}
-			}
-		}(queryengine2tee, snipTee)
 
 		log.Printf("Starting API httpd at %s", c.String("url"))
 		sdm630.Run_httpd(

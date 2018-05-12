@@ -70,13 +70,12 @@ func NewMqttClient(
 	mqttOpts.SetCleanSession(mqttCleanSession)
 	mqttOpts.SetAutoReconnect(true)
 
-	topic := fmt.Sprintf("%s/connected", mqttTopic)
-	message := fmt.Sprintf("0")
+	topic := fmt.Sprintf("%s/status", mqttTopic)
+	message := fmt.Sprintf("disconnected")
 	mqttOpts.SetWill(topic, message, byte(mqttQos), true)
 
+	log.Printf("Connecting MQTT at %s", mqttBroker)
 	if verbose {
-		log.Println("MQTT: connecting...")
-		log.Printf("\tbroker:       %s\n", mqttBroker)
 		log.Printf("\tclientid:     %s\n", mqttClientID)
 		log.Printf("\tuser:         %s\n", mqttUser)
 		if mqttPassword != "" {
@@ -94,6 +93,16 @@ func NewMqttClient(
 	}
 	if verbose {
 		log.Println("MQTT: connected")
+	}
+
+	// notify connection
+	token := mqttClient.Publish(topic, byte(mqttQos), true, message)
+	message = fmt.Sprintf("connected")
+	if verbose {
+		log.Printf("MQTT: push %s, message: %s", topic, message)
+	}
+	if token.Wait() && token.Error() != nil {
+		log.Fatal("MQTT: Error connecting, trying to reconnect: ", token.Error())
 	}
 
 	return &MqttClient{
