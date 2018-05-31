@@ -134,18 +134,21 @@ func (s *SDMRoundRobinScheduler) GetProbeSnip(devid uint8) (retval QuerySnip) {
 }
 
 func (s *SDMRoundRobinScheduler) Produce(devid uint8) (retval []QuerySnip) {
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg,
-		OpCode: OpCodeSDML1Voltage, Value: math.NaN(), Description: "L1 Voltage (V)", IEC61850: "VolLocPhsA"})
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML1Voltage, Value: math.NaN(),
+		Description: "L1 Voltage (V)", IEC61850: "VolLocPhsA"})
 	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML2Voltage, Value: math.NaN(),
 		Description: "L2 Voltage (V)", IEC61850: "VolLocPhsB"})
 	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML3Voltage, Value: math.NaN(),
 		Description: "L3 Voltage (V)", IEC61850: "VolLocPhsC"})
+
 	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML1Current, Value: math.NaN(),
 		Description: "L1 Current (A)", IEC61850: "AmpLocPhsA"})
 	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML2Current, Value: math.NaN(),
 		Description: "L2 Current (A)", IEC61850: "AmpLocPhsB"})
 	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML3Current, Value: math.NaN(),
 		Description: "L3 Current (A)", IEC61850: "AmpLocPhsC"})
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDMTotalLineCurrent, Value: math.NaN(),
+		Description: "Total Current (A)", IEC61850: "TotAmpLoc"})
 
 	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML1Power, Value: math.NaN(),
 		Description: "L1 Power (W)", IEC61850: "WLocPhsA"})
@@ -153,6 +156,8 @@ func (s *SDMRoundRobinScheduler) Produce(devid uint8) (retval []QuerySnip) {
 		Description: "L2 Power (W)", IEC61850: "WLocPhsB"})
 	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML3Power, Value: math.NaN(),
 		Description: "L3 Power (W)", IEC61850: "WLocPhsC"})
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDMTotalPower, Value: math.NaN(),
+		Description: "Total Power (W)", IEC61850: "TotWLoc"})
 
 	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML1Cosphi, Value: math.NaN(),
 		Description: "L1 Cosphi", IEC61850: "AngLocPhsA"})
@@ -160,6 +165,8 @@ func (s *SDMRoundRobinScheduler) Produce(devid uint8) (retval []QuerySnip) {
 		Description: "L2 Cosphi", IEC61850: "AngLocPhsB"})
 	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML3Cosphi, Value: math.NaN(),
 		Description: "L3 Cosphi", IEC61850: "AngLocPhsC"})
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDMTotalCosphi, Value: math.NaN(),
+		Description: "Total Cosphi", IEC61850: "TotAngLoc"})
 
 	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML1Import, Value: math.NaN(),
 		Description: "L1 Import (kWh)", IEC61850: "TotkWhImportPhsA"})

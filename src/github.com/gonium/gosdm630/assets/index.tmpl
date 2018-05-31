@@ -60,26 +60,26 @@
 							<td>${ meter.VolLocPhsC }</td>
 							<td>-</td>
 						</tr>
-						<tr v-if="meter.AmpLocPhsA != null || meter.AmpLocPhsB != null || meter.AmpLocPhsC != null">
+						<tr v-if="meter.AmpLocPhsA != null || meter.AmpLocPhsB != null || meter.AmpLocPhsC != null || meter.TotAmpLoc != null">
 							<td>Current (Ampere)</td>
 							<td>${ meter.AmpLocPhsA }</td>
 							<td>${ meter.AmpLocPhsB }</td>
 							<td>${ meter.AmpLocPhsC }</td>
-							<td>${ (parseFloat(meter.AmpLocPhsA) + parseFloat(meter.AmpLocPhsB) + parseFloat(meter.AmpLocPhsC)).toFixed(2) }</td>
+							<td>${ meter.TotAmpLoc != null ? meter.TotAmpLoc : (parseFloat(meter.AmpLocPhsA) + parseFloat(meter.AmpLocPhsB) + parseFloat(meter.AmpLocPhsC)).toFixed(2) }</td>
 						</tr>
-						<tr v-if="meter.WLocPhsA != null || meter.WLocPhsB != null || meter.WLocPhsC != null">
+						<tr v-if="meter.WLocPhsA != null || meter.WLocPhsB != null || meter.WLocPhsC != null || meter.TotWLoc != null">
 							<td>Power (Watt)</td>
 							<td>${ meter.WLocPhsA }</td>
 							<td>${ meter.WLocPhsB }</td>
 							<td>${ meter.WLocPhsC }</td>
-							<td>${ (parseFloat(meter.WLocPhsA) + parseFloat(meter.WLocPhsB) + parseFloat(meter.WLocPhsC)).toFixed(2) }</td>
+							<td>${ meter.TotWLoc != null ? meter.TotWLoc : (parseFloat(meter.WLocPhsA) + parseFloat(meter.WLocPhsB) + parseFloat(meter.WLocPhsC)).toFixed(2) }</td>
 						</tr>
-						<tr v-if="meter.AngLocPhsA != null || meter.AngLocPhsB != null || meter.AngLocPhsC != null">
+						<tr v-if="meter.AngLocPhsA != null || meter.AngLocPhsB != null || meter.AngLocPhsC != null || meter.TotAngLoc != null">
 							<td>Power Factor</td>
 							<td>${ meter.AngLocPhsA }</td>
 							<td>${ meter.AngLocPhsB }</td>
 							<td>${ meter.AngLocPhsC }</td>
-							<td>-</td>
+							<td>${ meter.TotAngLoc != null ? meter.TotAngLoc : "-" }</td>
 						</tr>
 						<tr>
 							<td>Import (kWh)</td>
