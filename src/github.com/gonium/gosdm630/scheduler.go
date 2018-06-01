@@ -219,12 +219,12 @@ func (s *JanitzaRoundRobinScheduler) GetProbeSnip(devid uint8) (retval QuerySnip
 }
 
 func (s *JanitzaRoundRobinScheduler) Produce(devid uint8) (retval []QuerySnip) {
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeJanitzaL1Voltage, Value: math.NaN(), Description: "L1 Voltage (V)", IEC61850: "VolLocPhsA"})
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeJanitzaL2Voltage, Value: math.NaN(), Description: "L2 Voltage (V)", IEC61850: "VolLocPhsB"})
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeJanitzaL3Voltage, Value: math.NaN(), Description: "L3 Voltage (V)", IEC61850: "VolLocPhsC"})
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeJanitzaL1Voltage, Value: math.NaN(),
+		Description: "L1 Voltage (V)", IEC61850: "VolLocPhsA"})
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeJanitzaL2Voltage, Value: math.NaN(),
+		Description: "L2 Voltage (V)", IEC61850: "VolLocPhsB"})
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeJanitzaL3Voltage, Value: math.NaN(),
+		Description: "L3 Voltage (V)", IEC61850: "VolLocPhsC"})
 
 	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeJanitzaL1Current, Value: math.NaN(),
 		Description: "L1 Current (A)", IEC61850: "AmpLocPhsA"})
