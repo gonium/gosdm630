@@ -1,12 +1,3 @@
-# Editor files
-*~
-*.sw[op]
-
-# gb-compiled binaries
-bin
-pkg
-*.zip
-
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
 *.o
 *.a
@@ -29,8 +20,17 @@ _cgo_export.*
 _testmain.go
 
 *.exe
-*.test
-*.prof
 
-vendor/
-embeddedassets.go
+*.msg
+*.lok
+
+samples/trivial
+samples/trivial2
+samples/sample
+samples/reconnect
+samples/ssl
+samples/custom_store
+samples/simple
+samples/stdinpub
+samples/stdoutsub
+samples/routing
