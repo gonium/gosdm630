@@ -128,14 +128,14 @@ func NewSDMRoundRobinScheduler() *SDMRoundRobinScheduler {
 }
 
 func (s *SDMRoundRobinScheduler) GetProbeSnip(devid uint8) (retval QuerySnip) {
-	retval = QuerySnip{DeviceId: devid, FuncCode: ReadInputReg,
-		OpCode: OpCodeSDML1Voltage, Value: math.NaN(), Description: "L1 Voltage (V)", IEC61850: "VolLocPhsA"}
+	retval = QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML1Voltage, Value: math.NaN(),
+		Description: "L1 Voltage (V)", IEC61850: "VolLocPhsA"}
 	return retval
 }
 
 func (s *SDMRoundRobinScheduler) Produce(devid uint8) (retval []QuerySnip) {
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg,
-		OpCode: OpCodeSDML1Voltage, Value: math.NaN(), Description: "L1 Voltage (V)", IEC61850: "VolLocPhsA"})
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML1Voltage, Value: math.NaN(),
+		Description: "L1 Voltage (V)", IEC61850: "VolLocPhsA"})
 	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML2Voltage, Value: math.NaN(),
 		Description: "L2 Voltage (V)", IEC61850: "VolLocPhsB"})
 	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadInputReg, OpCode: OpCodeSDML3Voltage, Value: math.NaN(),
@@ -206,18 +206,18 @@ func NewJanitzaRoundRobinScheduler() *JanitzaRoundRobinScheduler {
 }
 
 func (s *JanitzaRoundRobinScheduler) GetProbeSnip(devid uint8) (retval QuerySnip) {
-	retval = QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeJanitzaL1Voltage, Value: math.NaN(), Description: "L1 Voltage (V)", IEC61850: "VolLocPhsA"}
+	retval = QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeJanitzaL1Voltage, Value: math.NaN(),
+		Description: "L1 Voltage (V)", IEC61850: "VolLocPhsA"}
 	return retval
 }
 
 func (s *JanitzaRoundRobinScheduler) Produce(devid uint8) (retval []QuerySnip) {
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeJanitzaL1Voltage, Value: math.NaN(), Description: "L1 Voltage (V)", IEC61850: "VolLocPhsA"})
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeJanitzaL2Voltage, Value: math.NaN(), Description: "L2 Voltage (V)", IEC61850: "VolLocPhsB"})
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeJanitzaL3Voltage, Value: math.NaN(), Description: "L3 Voltage (V)", IEC61850: "VolLocPhsC"})
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeJanitzaL1Voltage, Value: math.NaN(),
+		Description: "L1 Voltage (V)", IEC61850: "VolLocPhsA"})
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeJanitzaL2Voltage, Value: math.NaN(),
+		Description: "L2 Voltage (V)", IEC61850: "VolLocPhsB"})
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeJanitzaL3Voltage, Value: math.NaN(),
+		Description: "L3 Voltage (V)", IEC61850: "VolLocPhsC"})
 
 	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeJanitzaL1Current, Value: math.NaN(),
 		Description: "L1 Current (A)", IEC61850: "AmpLocPhsA"})
@@ -271,20 +271,19 @@ func NewDZGRoundRobinScheduler() *DZGRoundRobinScheduler {
 }
 
 func (s *DZGRoundRobinScheduler) GetProbeSnip(devid uint8) (retval QuerySnip) {
-	retval = QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeDZGL1Voltage, Value: math.NaN(),
+	retval = QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeDZGL1Voltage, Value: math.NaN(),
 		Description: "L1 Voltage (V)", IEC61850: "VolLocPhsA",
 		Transform: MkRTUScaledIntToFloat64(100)}
 	return retval
 }
 
 func (s *DZGRoundRobinScheduler) Produce(devid uint8) (retval []QuerySnip) {
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeDZGL1Voltage, Value: math.NaN(), Description: "L1 Voltage (V)", IEC61850: "VolLocPhsA", Transform: MkRTUScaledIntToFloat64(100)})
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeDZGL2Voltage, Value: math.NaN(), Description: "L2 Voltage (V)", IEC61850: "VolLocPhsB", Transform: MkRTUScaledIntToFloat64(100)})
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeDZGL3Voltage, Value: math.NaN(), Description: "L3 Voltage (V)", IEC61850: "VolLocPhsC", Transform: MkRTUScaledIntToFloat64(100)})
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeDZGL1Voltage, Value: math.NaN(),
+		Description: "L1 Voltage (V)", IEC61850: "VolLocPhsA", Transform: MkRTUScaledIntToFloat64(100)})
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeDZGL2Voltage, Value: math.NaN(),
+		Description: "L2 Voltage (V)", IEC61850: "VolLocPhsB", Transform: MkRTUScaledIntToFloat64(100)})
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeDZGL3Voltage, Value: math.NaN(),
+		Description: "L3 Voltage (V)", IEC61850: "VolLocPhsC", Transform: MkRTUScaledIntToFloat64(100)})
 
 	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeDZGL1Current, Value: math.NaN(),
 		Description: "L1 Current (A)", IEC61850: "AmpLocPhsA", Transform: MkRTUScaledIntToFloat64(1000)})
@@ -293,31 +292,23 @@ func (s *DZGRoundRobinScheduler) Produce(devid uint8) (retval []QuerySnip) {
 	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeDZGL3Current, Value: math.NaN(),
 		Description: "L3 Current (A)", IEC61850: "AmpLocPhsC", Transform: MkRTUScaledIntToFloat64(1000)})
 
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeDZGL1Import, Value: math.NaN(),
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeDZGL1Import, Value: math.NaN(),
 		Description: "L1 Import (kWh)", IEC61850: "TotkWhImportPhsA"})
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeDZGL2Import, Value: math.NaN(),
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeDZGL2Import, Value: math.NaN(),
 		Description: "L2 Import (kWh)", IEC61850: "TotkWhImportPhsB"})
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeDZGL3Import, Value: math.NaN(),
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeDZGL3Import, Value: math.NaN(),
 		Description: "L3 Import (kWh)", IEC61850: "TotkWhImportPhsC"})
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeDZGTotalImport, Value: math.NaN(),
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeDZGTotalImport, Value: math.NaN(),
 		Description: "Total Import", IEC61850: "TotkWhImport",
 		Transform: MkRTUScaledIntToFloat64(1000)})
 
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeDZGL1Export, Value: math.NaN(),
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeDZGL1Export, Value: math.NaN(),
 		Description: "L1 Export (kWh)", IEC61850: "TotkWhExportPhsA"})
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeDZGL2Export, Value: math.NaN(),
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeDZGL2Export, Value: math.NaN(),
 		Description: "L2 Export (kWh)", IEC61850: "TotkWhExportPhsB"})
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeDZGL3Export, Value: math.NaN(),
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeDZGL3Export, Value: math.NaN(),
 		Description: "L3 Export (kWh)", IEC61850: "TotkWhExportPhsC"})
-	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg,
-		OpCode: OpCodeDZGTotalExport, Value: math.NaN(),
+	retval = append(retval, QuerySnip{DeviceId: devid, FuncCode: ReadHoldingReg, OpCode: OpCodeDZGTotalExport, Value: math.NaN(),
 		Description: "Total Export", IEC61850: "TotkWhExport",
 		Transform: MkRTUScaledIntToFloat64(1000)})
 
