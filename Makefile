@@ -29,5 +29,7 @@ clean:
 dep:
 	@echo "Installing embed tool"
 	@go get -u github.com/aprice/embed/cmd/embed
+	@echo "Installing vendor dependencies"
+	@dep ensure
 
 .PHONY: all build binaries assets release test clean dep
