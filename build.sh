@@ -1,8 +1,10 @@
 #!/bin/bash
 
+RELEASE=$(pwd)/release
 BIN=$(pwd)/bin
 CMDS=$(go list -f '{{if (eq .Name "main")}}{{.ImportPath}}{{end}}' ./...)
 
+mkdir -p $RELEASE
 mkdir -p $BIN
 if ls *.zip 1>/dev/null 2>&1; then rm *.zip; fi
 
@@ -19,7 +21,7 @@ function build {
 	done
 	cd ..
 
-	zip sdm630-$GOOS-$GOARCH $BIN/*
+	zip $RELEASE/sdm630-$GOOS-$GOARCH $BIN/*
 }
 
 echo "Building for ..."
