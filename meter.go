@@ -11,12 +11,6 @@ type MeterType string
 type MeterState uint8
 
 const (
-	METERTYPE_JANITZA = "JANITZA"
-	METERTYPE_SDM     = "SDM"
-	METERTYPE_DZG     = "DZG"
-)
-
-const (
 	METERSTATE_AVAILABLE   = iota // The device responds (initial state)
 	METERSTATE_UNAVAILABLE        // The device does not respond
 )
@@ -24,22 +18,29 @@ const (
 type Meter struct {
 	Type          MeterType
 	DeviceId      uint8
-	Scheduler     Scheduler
+	Producer      Producer
 	MeterReadings *MeterReadings
 	state         MeterState
 	mux           sync.Mutex // syncs the meter state variable
 }
 
+// Producer is the interface that produces query snips which represent
+// modbus operations
+type Producer interface {
+	Produce(devid uint8) []QuerySnip
+	Probe(devid uint8) QuerySnip
+}
+
 func NewMeter(
 	typeid MeterType,
 	devid uint8,
-	scheduler Scheduler,
+	producer Producer,
 	timeToCacheReadings time.Duration,
 ) *Meter {
 	r := NewMeterReadings(devid, timeToCacheReadings)
 	return &Meter{
 		Type:          typeid,
-		Scheduler:     scheduler,
+		Producer:      producer,
 		DeviceId:      devid,
 		MeterReadings: r,
 		state:         METERSTATE_AVAILABLE,
