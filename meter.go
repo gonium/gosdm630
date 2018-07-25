@@ -3,6 +3,7 @@ package sdm630
 import (
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 )
@@ -29,6 +30,31 @@ type Meter struct {
 type Producer interface {
 	Produce(devid uint8) []QuerySnip
 	Probe(devid uint8) QuerySnip
+}
+
+func NewMeterByType(
+	typeid string,
+	devid uint8,
+	timeToCacheReadings time.Duration,
+) (*Meter, error) {
+	var p Producer
+	typeid = strings.ToUpper(typeid)
+
+	switch typeid {
+	case METERTYPE_SDM:
+		p = NewSDMProducer()
+	case METERTYPE_JANITZA:
+		p = NewJanitzaProducer()
+	case METERTYPE_DZG:
+		log.Println(`WARNING: The DZG DVH 4013 does not report the same
+		measurements as the other meters. Only limited functionality is 
+		implemented.`)
+		p = NewDZGProducer()
+	default:
+		return nil, fmt.Errorf("Unknown meter type %s", typeid)
+	}
+
+	return NewMeter(MeterType(typeid), devid, p, timeToCacheReadings), nil
 }
 
 func NewMeter(
