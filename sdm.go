@@ -54,6 +54,7 @@ func (p *SDMProducer) snip(devid uint8, opcode uint16, iec string) QuerySnip {
 		DeviceId:    devid,
 		FuncCode:    ReadInputReg,
 		OpCode:      opcode,
+		ReadLen:     2,
 		Value:       math.NaN(),
 		IEC61850:    iec,
 		Description: GetIecDescription(iec),
