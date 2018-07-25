@@ -213,6 +213,9 @@ func (q *ModbusEngine) Scan() {
 		if probe(METERTYPE_DZG, NewDZGProducer().Probe(devid)) {
 			continue
 		}
+		if probe(METERTYPE_SAIA, NewSaiaProducer().Probe(devid)) {
+			continue
+		}
 
 		log.Printf("Device %d: n/a\r\n", devid)
 

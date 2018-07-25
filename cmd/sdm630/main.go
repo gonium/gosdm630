@@ -48,6 +48,7 @@ func main() {
 			"SDM" for Eastron SDM meters
 			"JANITZA" for Janitza B-Series DIN-Rail meters
 			"DZG" for the DZG Metering GmbH DVH4013 DIN-Rail meter
+			"SAIA" for the Saia Burgess ALE3 meter
 			Example: -d JANITZA:1,SDM:22,DZG:23`,
 		},
 		cli.StringFlag{

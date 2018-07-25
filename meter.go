@@ -50,6 +50,11 @@ func NewMeterByType(
 		measurements as the other meters. Only limited functionality is 
 		implemented.`)
 		p = NewDZGProducer()
+	case METERTYPE_SAIA:
+		log.Println(`WARNING: The Saia Burgess ALE3 does not report the same
+		measurements as the other meters. Only limited functionality is 
+		implemented.`)
+		p = NewSaiaProducer()
 	default:
 		return nil, fmt.Errorf("Unknown meter type %s", typeid)
 	}
