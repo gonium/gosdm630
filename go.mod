@@ -1,7 +1,7 @@
 module github.com/gonium/gosdm630
 
 require (
-	github.com/aprice/embed v0.0.0-20171223211210-8e25a549692e
+	github.com/aprice/embed v0.0.0-20171223211210-e0f543275bf966271e2c3b3ab70265f635f0394a
 	github.com/boltdb/bolt v1.3.1
 	github.com/eclipse/paho.mqtt.golang v1.1.1
 	github.com/goburrow/modbus v0.1.0
