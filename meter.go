@@ -11,16 +11,15 @@ import (
 type MeterState uint8
 
 const (
-	METERSTATE_AVAILABLE   = iota // The device responds (initial state)
-	METERSTATE_UNAVAILABLE        // The device does not respond
+	METERSTATE_AVAILABLE   MeterState = iota // The device responds (initial state)
+	METERSTATE_UNAVAILABLE                   // The device does not respond
 )
 
 type Meter struct {
-	DeviceId      uint8
-	Producer      Producer
-	MeterReadings *MeterReadings
-	state         MeterState
-	mux           sync.Mutex // syncs the meter state variable
+	DeviceId uint8
+	Producer Producer
+	state    MeterState
+	mux      sync.Mutex // syncs the meter state variable
 }
 
 // Producer is the interface that produces query snips which represent
@@ -46,32 +45,29 @@ func NewMeterByType(
 		p = NewJanitzaProducer()
 	case METERTYPE_DZG:
 		log.Println(`WARNING: The DZG DVH 4013 does not report the same
-		measurements as the other meters. Only limited functionality is 
+		measurements as the other meters. Only limited functionality is
 		implemented.`)
 		p = NewDZGProducer()
 	case METERTYPE_SBC:
 		log.Println(`WARNING: The SBC ALE3 does not report the same
-		measurements as the other meters. Only limited functionality is 
+		measurements as the other meters. Only limited functionality is
 		implemented.`)
 		p = NewSBCProducer()
 	default:
 		return nil, fmt.Errorf("Unknown meter type %s", typeid)
 	}
 
-	return NewMeter(devid, p, timeToCacheReadings), nil
+	return NewMeter(devid, p), nil
 }
 
 func NewMeter(
 	devid uint8,
 	producer Producer,
-	timeToCacheReadings time.Duration,
 ) *Meter {
-	r := NewMeterReadings(devid, timeToCacheReadings)
 	return &Meter{
-		Producer:      producer,
-		DeviceId:      devid,
-		MeterReadings: r,
-		state:         METERSTATE_AVAILABLE,
+		Producer: producer,
+		DeviceId: devid,
+		state:    METERSTATE_AVAILABLE,
 	}
 }
 
@@ -114,8 +110,8 @@ type MeterReadings struct {
 
 func NewMeterReadings(devid uint8, secondsToStore time.Duration) (retval *MeterReadings) {
 	reading := Readings{
-		UniqueId:       fmt.Sprintf(UniqueIdFormat, devid),
-		ModbusDeviceId: devid,
+		UniqueId: fmt.Sprintf(UniqueIdFormat, devid),
+		DeviceId: devid,
 	}
 	retval = &MeterReadings{
 		Lastminutereadings: ReadingSlice{},
@@ -138,8 +134,8 @@ func NewMeterReadings(devid uint8, secondsToStore time.Duration) (retval *MeterR
 func (mr *MeterReadings) Purge(devid uint8) {
 	mr.Lastminutereadings = ReadingSlice{}
 	mr.Lastreading = Readings{
-		UniqueId:       fmt.Sprintf(UniqueIdFormat, devid),
-		ModbusDeviceId: devid,
+		UniqueId: fmt.Sprintf(UniqueIdFormat, devid),
+		DeviceId: devid,
 	}
 }
 
