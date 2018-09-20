@@ -34,12 +34,7 @@ type ModbusEngine struct {
 	status  *Status
 }
 
-func NewModbusEngine(
-	rtuDevice string,
-	comset int,
-	verbose bool,
-	status *Status,
-) *ModbusEngine {
+func NewRTUClient(rtuDevice string, comset int, verbose bool) *modbus.RTUClientHandler {
 	// Modbus RTU/ASCII
 	rtuclient := modbus.NewRTUClientHandler(rtuDevice)
 
@@ -81,7 +76,25 @@ func NewModbusEngine(
 	}
 	defer rtuclient.Close()
 
-	mbclient := modbus.NewClient(rtuclient)
+	return rtuclient
+}
+
+func NewModbusEngine(
+	rtuDevice string,
+	comset int,
+	verbose bool,
+	status *Status,
+) *ModbusEngine {
+	var rtuclient *modbus.RTUClientHandler
+	var mbclient modbus.Client
+
+	if rtuDevice == "simulation" {
+		rtuclient = &modbus.RTUClientHandler{}
+		mbclient = NewMockClient(0)
+	} else {
+		rtuclient = NewRTUClient(rtuDevice, comset, verbose)
+		mbclient = modbus.NewClient(rtuclient)
+	}
 
 	return &ModbusEngine{
 		client:  mbclient,
