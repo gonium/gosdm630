@@ -34,6 +34,7 @@ type Readings struct {
 	TotalExport *float64
 	THD         THDInfo
 	Frequency   *float64
+	accessor    *StructureAccessor `json:"-"` // match datagrams
 }
 
 type THDInfo struct {
@@ -47,6 +48,24 @@ type ThreePhaseReadings struct {
 	L1 *float64
 	L2 *float64
 	L3 *float64
+}
+
+func (lhs *ThreePhaseReadings) add(rhs ThreePhaseReadings) ThreePhaseReadings {
+	res := ThreePhaseReadings{
+		L1: F2fp(Fp2f(lhs.L1) + Fp2f(rhs.L1)),
+		L2: F2fp(Fp2f(lhs.L2) + Fp2f(rhs.L2)),
+		L3: F2fp(Fp2f(lhs.L3) + Fp2f(rhs.L3)),
+	}
+	return res
+}
+
+func (lhs *ThreePhaseReadings) divide(scaler float64) ThreePhaseReadings {
+	res := ThreePhaseReadings{
+		L1: F2fp(Fp2f(lhs.L1) / scaler),
+		L2: F2fp(Fp2f(lhs.L2) / scaler),
+		L3: F2fp(Fp2f(lhs.L3) / scaler),
+	}
+	return res
 }
 
 // F2fp helper converts float64 to *float64
@@ -73,7 +92,7 @@ func (r *Readings) String() string {
 		"L2: %.1fV %.2fA %.0fW %.2fcos | " +
 		"L3: %.1fV %.2fA %.0fW %.2fcos | " +
 		"%.1fHz"
-	return fmt.Sprintf(fmtString,
+	res := fmt.Sprintf(fmtString,
 		r.UniqueId,
 		Fp2f(r.Voltage.L1),
 		Fp2f(r.Current.L1),
@@ -89,20 +108,13 @@ func (r *Readings) String() string {
 		Fp2f(r.Cosphi.L3),
 		Fp2f(r.Frequency),
 	)
+	fmt.Println(res)
+	return res
 }
 
 // IsOlderThan returns true if the reading is older than the given timestamp.
 func (r *Readings) IsOlderThan(ts time.Time) (retval bool) {
 	return r.Timestamp.Before(ts)
-}
-
-func tpAdd(lhs ThreePhaseReadings, rhs ThreePhaseReadings) ThreePhaseReadings {
-	res := ThreePhaseReadings{
-		L1: F2fp(Fp2f(lhs.L1) + Fp2f(rhs.L1)),
-		L2: F2fp(Fp2f(lhs.L2) + Fp2f(rhs.L2)),
-		L3: F2fp(Fp2f(lhs.L3) + Fp2f(rhs.L3)),
-	}
-	return res
 }
 
 /*
@@ -117,20 +129,18 @@ func (lhs *Readings) add(rhs *Readings) (*Readings, error) {
 	}
 
 	res := &Readings{
-		UniqueId: lhs.UniqueId,
-		DeviceId: lhs.DeviceId,
-		Voltage:  tpAdd(lhs.Voltage, rhs.Voltage),
-		Current:  tpAdd(lhs.Current, rhs.Current),
-		Power:    tpAdd(lhs.Power, rhs.Power),
-		Cosphi:   tpAdd(lhs.Cosphi, rhs.Cosphi),
-		Import:   tpAdd(lhs.Import, rhs.Import),
-		TotalImport: F2fp(Fp2f(lhs.TotalImport) +
-			Fp2f(rhs.TotalImport)),
-		Export: tpAdd(lhs.Export, rhs.Export),
-		TotalExport: F2fp(Fp2f(lhs.TotalExport) +
-			Fp2f(rhs.TotalExport)),
+		UniqueId:    lhs.UniqueId,
+		DeviceId:    lhs.DeviceId,
+		Voltage:     lhs.Voltage.add(rhs.Voltage),
+		Current:     lhs.Current.add(rhs.Current),
+		Power:       lhs.Power.add(rhs.Power),
+		Cosphi:      lhs.Cosphi.add(rhs.Cosphi),
+		Import:      lhs.Import.add(rhs.Import),
+		TotalImport: F2fp(Fp2f(lhs.TotalImport) + Fp2f(rhs.TotalImport)),
+		Export:      lhs.Export.add(rhs.Export),
+		TotalExport: F2fp(Fp2f(lhs.TotalExport) + Fp2f(rhs.TotalExport)),
 		THD: THDInfo{
-			VoltageNeutral: tpAdd(lhs.THD.VoltageNeutral, rhs.THD.VoltageNeutral),
+			VoltageNeutral: lhs.THD.VoltageNeutral.add(rhs.THD.VoltageNeutral),
 			AvgVoltageNeutral: F2fp(Fp2f(lhs.THD.AvgVoltageNeutral) +
 				Fp2f(rhs.THD.AvgVoltageNeutral)),
 		},
@@ -149,15 +159,6 @@ func (lhs *Readings) add(rhs *Readings) (*Readings, error) {
 	return res, nil
 }
 
-func tpDivide(lhs ThreePhaseReadings, scaler float64) ThreePhaseReadings {
-	res := ThreePhaseReadings{
-		L1: F2fp(Fp2f(lhs.L1) / scaler),
-		L2: F2fp(Fp2f(lhs.L2) / scaler),
-		L3: F2fp(Fp2f(lhs.L3) / scaler),
-	}
-	return res
-}
-
 /*
  * Divide a reading by an integer. The individual values are divided except
  * for the time: it is simply copied over to the result
@@ -169,16 +170,16 @@ func (lhs *Readings) divide(scaler float64) *Readings {
 		DeviceId:  lhs.DeviceId,
 		UniqueId:  lhs.UniqueId,
 
-		Voltage:     tpDivide(lhs.Voltage, scaler),
-		Current:     tpDivide(lhs.Current, scaler),
-		Power:       tpDivide(lhs.Power, scaler),
-		Cosphi:      tpDivide(lhs.Cosphi, scaler),
-		Import:      tpDivide(lhs.Import, scaler),
+		Voltage:     lhs.Voltage.divide(scaler),
+		Current:     lhs.Current.divide(scaler),
+		Power:       lhs.Power.divide(scaler),
+		Cosphi:      lhs.Cosphi.divide(scaler),
+		Import:      lhs.Import.divide(scaler),
 		TotalImport: F2fp(Fp2f(lhs.TotalImport) / scaler),
-		Export:      tpDivide(lhs.Export, scaler),
+		Export:      lhs.Export.divide(scaler),
 		TotalExport: F2fp(Fp2f(lhs.TotalExport) / scaler),
 		THD: THDInfo{
-			VoltageNeutral:    tpDivide(lhs.THD.VoltageNeutral, scaler),
+			VoltageNeutral:    lhs.THD.VoltageNeutral.divide(scaler),
 			AvgVoltageNeutral: F2fp(Fp2f(lhs.THD.AvgVoltageNeutral) / scaler),
 		},
 		Frequency: F2fp(Fp2f(lhs.Frequency) / scaler),
@@ -191,45 +192,10 @@ func (lhs *Readings) divide(scaler float64) *Readings {
 func (r *Readings) MergeSnip(q QuerySnip) {
 	r.Timestamp = q.ReadTimestamp
 	r.Unix = r.Timestamp.Unix()
+
 	switch q.IEC61850 {
-	case VoltageL1:
-		r.Voltage.L1 = &q.Value
-	case VoltageL2:
-		r.Voltage.L2 = &q.Value
-	case VoltageL3:
-		r.Voltage.L3 = &q.Value
-	case CurrentL1:
-		r.Current.L1 = &q.Value
-	case CurrentL2:
-		r.Current.L2 = &q.Value
-	case CurrentL3:
-		r.Current.L3 = &q.Value
-	case PowerL1:
-		r.Power.L1 = &q.Value
-	case PowerL2:
-		r.Power.L2 = &q.Value
-	case PowerL3:
-		r.Power.L3 = &q.Value
-	case CosphiL1:
-		r.Cosphi.L1 = &q.Value
-	case CosphiL2:
-		r.Cosphi.L2 = &q.Value
-	case CosphiL3:
-		r.Cosphi.L3 = &q.Value
-	case ImportL1:
-		r.Import.L1 = &q.Value
-	case ImportL2:
-		r.Import.L2 = &q.Value
-	case ImportL3:
-		r.Import.L3 = &q.Value
 	case Import:
 		r.TotalImport = &q.Value
-	case ExportL1:
-		r.Export.L1 = &q.Value
-	case ExportL2:
-		r.Export.L2 = &q.Value
-	case ExportL3:
-		r.Export.L3 = &q.Value
 	case Export:
 		r.TotalExport = &q.Value
 		//	case L1THDCurrent
@@ -251,7 +217,13 @@ func (r *Readings) MergeSnip(q QuerySnip) {
 	case Frequency:
 		r.Frequency = &q.Value
 	default:
-		log.Printf("Unknown register %s - ignoring", q.IEC61850)
+		// set reading struct value via reflection
+		if r.accessor == nil {
+			r.accessor = NewStructureAccessor(`^(.+?)(L[123])?$`)
+		}
+		if !r.accessor.SetFloat(r, q.IEC61850.String(), q.Value) {
+			log.Printf("Unknown register %s - ignoring", q.IEC61850)
+		}
 	}
 }
 
