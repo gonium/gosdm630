@@ -1,12 +1,12 @@
-package sdm630
+package meters
 
-type MeasurementType int
+type Register int
 
-type MeasurementTypes map[MeasurementType]uint16
+type RegisterDefinitions map[Register]uint16
 
 const (
 	// phases
-	VoltageL1 MeasurementType = iota
+	VoltageL1 Register = iota
 	VoltageL2
 	VoltageL3
 	CurrentL1

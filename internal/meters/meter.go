@@ -5,7 +5,6 @@ import (
 	"log"
 	"strings"
 	"sync"
-	"time"
 )
 
 const (
@@ -17,7 +16,7 @@ type Operation struct {
 	FuncCode  uint8
 	OpCode    uint16
 	ReadLen   uint16
-	IEC61850  string
+	IEC61850  Register
 	Transform RTUTransform
 }
 
@@ -51,11 +50,7 @@ type Producer interface {
 	Probe() Operation
 }
 
-func NewMeterByType(
-	typeid string,
-	devid uint8,
-	timeToCacheReadings time.Duration,
-) (*Meter, error) {
+func NewMeterByType(typeid string, devid uint8) (*Meter, error) {
 	var p Producer
 	typeid = strings.ToUpper(typeid)
 

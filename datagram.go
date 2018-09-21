@@ -210,11 +210,11 @@ func (r *Readings) MergeSnip(q QuerySnip) {
 		r.Power.L2 = &q.Value
 	case PowerL3:
 		r.Power.L3 = &q.Value
-	case PowerFactorL1:
+	case CosphiL1:
 		r.Cosphi.L1 = &q.Value
-	case PowerFactorL2:
+	case CosphiL2:
 		r.Cosphi.L2 = &q.Value
-	case PowerFactorL3:
+	case CosphiL3:
 		r.Cosphi.L3 = &q.Value
 	case ImportL1:
 		r.Import.L1 = &q.Value
@@ -251,7 +251,7 @@ func (r *Readings) MergeSnip(q QuerySnip) {
 	case Frequency:
 		r.Frequency = &q.Value
 	default:
-		log.Fatalf("Cannot merge unknown IEC: %+v", q)
+		log.Printf("Unknown register %s - ignoring", q.IEC61850)
 	}
 }
 
@@ -300,11 +300,10 @@ func (q *QuerySnip) MarshalJSON() ([]byte, error) {
 		Description string
 		Timestamp   int64
 	}{
-		DeviceId:    q.DeviceId,
-		Value:       q.Value,
-		IEC61850:    q.IEC61850,
-		Description: GetIecDescription(q.IEC61850),
-		Timestamp:   q.ReadTimestamp.UnixNano() / 1e6,
+		DeviceId:  q.DeviceId,
+		Value:     q.Value,
+		IEC61850:  q.IEC61850.String(),
+		Timestamp: q.ReadTimestamp.UnixNano() / 1e6,
 	})
 }
 
