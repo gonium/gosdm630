@@ -53,61 +53,61 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr v-if="meter.VolLocPhsA != null || meter.VolLocPhsB != null || meter.VolLocPhsC != null">
+						<tr v-if="meter.VoltageL1 != null || meter.VoltageL2 != null || meter.VoltageL3 != null">
 							<td>Voltage (V)</td>
-							<td>${ meter.VolLocPhsA }</td>
-							<td>${ meter.VolLocPhsB }</td>
-							<td>${ meter.VolLocPhsC }</td>
+							<td>${ meter.VoltageL1 }</td>
+							<td>${ meter.VoltageL2 }</td>
+							<td>${ meter.VoltageL3 }</td>
 							<td>-</td>
 						</tr>
-						<tr v-if="meter.AmpLocPhsA != null || meter.AmpLocPhsB != null || meter.AmpLocPhsC != null">
+						<tr v-if="meter.CurrentL1 != null || meter.CurrentL2 != null || meter.CurrentL2 != null">
 							<td>Current (A)</td>
-							<td>${ meter.AmpLocPhsA }</td>
-							<td>${ meter.AmpLocPhsB }</td>
-							<td>${ meter.AmpLocPhsC }</td>
-							<td>${ (parseFloat(meter.AmpLocPhsA) + parseFloat(meter.AmpLocPhsB) + parseFloat(meter.AmpLocPhsC)).toFixed(2) }</td>
+							<td>${ meter.CurrentL1 }</td>
+							<td>${ meter.CurrentL2 }</td>
+							<td>${ meter.CurrentL2 }</td>
+							<td>${ (parseFloat(meter.CurrentL1) + parseFloat(meter.CurrentL2) + parseFloat(meter.CurrentL2)).toFixed(2) }</td>
 						</tr>
-						<tr v-if="meter.WLocPhsA != null || meter.WLocPhsB != null || meter.WLocPhsC != null">
+						<tr v-if="meter.PowerL1 != null || meter.PowerL2 != null || meter.PowerL2 != null">
 							<td>Power (W)</td>
-							<td>${ meter.WLocPhsA }</td>
-							<td>${ meter.WLocPhsB }</td>
-							<td>${ meter.WLocPhsC }</td>
-							<td>${ (parseFloat(meter.WLocPhsA) + parseFloat(meter.WLocPhsB) + parseFloat(meter.WLocPhsC)).toFixed(2) }</td>
+							<td>${ meter.PowerL1 }</td>
+							<td>${ meter.PowerL2 }</td>
+							<td>${ meter.PowerL2 }</td>
+							<td>${ (parseFloat(meter.PowerL1) + parseFloat(meter.PowerL2) + parseFloat(meter.PowerL2)).toFixed(2) }</td>
 						</tr>
-						<tr v-if="meter.AngLocPhsA != null || meter.AngLocPhsB != null || meter.AngLocPhsC != null">
+						<tr v-if="meter.CosphiL1 != null || meter.CosphiL2 != null || meter.CosphiL2 != null">
 							<td>Power Factor</td>
-							<td>${ meter.AngLocPhsA }</td>
-							<td>${ meter.AngLocPhsB }</td>
-							<td>${ meter.AngLocPhsC }</td>
+							<td>${ meter.CosphiL1 }</td>
+							<td>${ meter.CosphiL2 }</td>
+							<td>${ meter.CosphiL2 }</td>
 							<td>-</td>
 						</tr>
-						<tr v-if="meter.TotkWhImportPhsA != null || meter.TotkWhImportPhsB != null || meter.TotkWhImportPhsC != null || meter.TotkWhImport != null">
+						<tr v-if="meter.ImportL1 != null || meter.ImportL2 != null || meter.ImportL2 != null || meter.Import != null">
 							<td>Import (kWh)</td>
-							<td>${ meter.TotkWhImportPhsA }</td>
-							<td>${ meter.TotkWhImportPhsB }</td>
-							<td>${ meter.TotkWhImportPhsC }</td>
-							<td>${ meter.TotkWhImport }</td>
+							<td>${ meter.ImportL1 }</td>
+							<td>${ meter.ImportL2 }</td>
+							<td>${ meter.ImportL2 }</td>
+							<td>${ meter.Import }</td>
 						</tr>
-						<tr v-if="meter.TotkWhExportPhsA != null || meter.TotkWhExportPhsB != null || meter.TotkWhExportPhsC != null || meter.TotkWhExport != null">
+						<tr v-if="meter.ExportL1 != null || meter.ExportL2 != null || meter.ExportL2 != null || meter.Export != null">
 							<td>Export (kWh)</td>
-							<td>${ meter.TotkWhExportPhsA }</td>
-							<td>${ meter.TotkWhExportPhsB }</td>
-							<td>${ meter.TotkWhExportPhsC }</td>
-							<td>${ meter.TotkWhExport }</td>
+							<td>${ meter.ExportL1 }</td>
+							<td>${ meter.ExportL2 }</td>
+							<td>${ meter.ExportL2 }</td>
+							<td>${ meter.Export }</td>
 						</tr>
-						<tr v-if="meter.ThdVolPhsA != null || meter.ThdVolPhsB != null || meter.ThdVolPhsC != null || meter.ThdVol != null">
-							<td>THD voltage (%)</td>
-							<td>${ meter.ThdVolPhsA }</td>
-							<td>${ meter.ThdVolPhsB }</td>
-							<td>${ meter.ThdVolPhsC }</td>
-							<td>${ meter.ThdVol }</td>
+						<tr v-if="meter.THDL1 != null || meter.THDL2 != null || meter.THDL2 != null || meter.THD != null">
+							<td>THD (%)</td>
+							<td>${ meter.THDL1 }</td>
+							<td>${ meter.THDL2 }</td>
+							<td>${ meter.THDL2 }</td>
+							<td>${ meter.THD }</td>
 						</tr>
 						<tr v-if="meter.Freq != null">
 							<td>Frequency (Hz)</td>
 							<td>-</td>
 							<td>-</td>
 							<td>-</td>
-							<td>${ meter.Freq }</td>
+							<td>${ meter.Frequency }</td>
 						</tr>
 					</tbody>
 				</table>
