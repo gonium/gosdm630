@@ -162,16 +162,6 @@ func main() {
 		tee := NewQuerySnipBroadcaster(snips)
 		go tee.Run()
 
-		// longpoll firehose
-		var firehose *Firehose
-		if false {
-			firehose = NewFirehose(
-				tee.Attach(),
-				status,
-				c.Bool("verbose"))
-			go firehose.Run()
-		}
-
 		// websocket hub
 		hub := NewSocketHub(tee.Attach(), status)
 		go hub.Run()
@@ -204,7 +194,6 @@ func main() {
 
 		Run_httpd(
 			mc,
-			firehose,
 			hub,
 			status,
 			c.String("url"),
