@@ -19,7 +19,7 @@ const (
 func main() {
 	app := cli.NewApp()
 	app.Name = "sdm"
-	app.Usage = "SDM modbus daemon"
+	app.Usage = "SDM MODBUS daemon"
 	app.Version = RELEASEVERSION
 	app.HideVersion = true
 	app.Flags = []cli.Flag{
@@ -27,12 +27,12 @@ func main() {
 		cli.StringFlag{
 			Name:  "serialadapter, s",
 			Value: "/dev/ttyUSB0",
-			Usage: "path to serial RTU device",
+			Usage: "Serial RTU device",
 		},
 		cli.IntFlag{
 			Name:  "comset, c",
 			Value: ModbusComset9600_8N1,
-			Usage: `which communication parameter set to use. Valid sets are
+			Usage: `Communication parameters:
 		` + strconv.Itoa(ModbusComset2400_8N1) + `:  2400 baud, 8N1
 		` + strconv.Itoa(ModbusComset9600_8N1) + `:  9600 baud, 8N1
 		` + strconv.Itoa(ModbusComset19200_8N1) + `: 19200 baud, 8N1
@@ -52,6 +52,10 @@ func main() {
 			"SBC" for the Saia Burgess Controls ALE3 meters
 			Example: -d JANITZA:1,SDM:22,DZG:23`,
 		},
+		cli.BoolFlag{
+			Name:  "detect",
+			Usage: "Detect MODBUS devices.",
+		},
 		cli.StringFlag{
 			Name:  "unique_id_format, f",
 			Value: "Meter#%d",
@@ -68,7 +72,7 @@ func main() {
 		cli.StringFlag{
 			Name:  "url, u",
 			Value: ":8080",
-			Usage: "the URL the server should respond on",
+			Usage: "Server listening socket",
 		},
 
 		// mqtt api
@@ -153,6 +157,12 @@ func main() {
 			c.Bool("verbose"),
 			status,
 		)
+
+		// detect command
+		if c.Bool("detect") {
+			qe.Scan()
+			return
+		}
 
 		// scheduler and meter data channel
 		scheduler, snips := SetupScheduler(meters, qe)
