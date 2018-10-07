@@ -84,7 +84,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:  "topic, t",
-			Value: "sdm630",
+			Value: "sdm",
 			Usage: "MQTT: Topic name to/from which to publish/subscribe (optional)",
 			// Destination: &mqttTopic,
 		},
