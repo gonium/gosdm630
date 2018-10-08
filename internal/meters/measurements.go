@@ -80,7 +80,7 @@ var iec = map[Measurement]string{
 	CosphiL1:  "L1 Cosphi",
 	CosphiL2:  "L2 Cosphi",
 	CosphiL3:  "L3 Cosphi",
-	Frequency: "Frequency of supply voltages",
+	Frequency: "Frequency (Hz)",
 	THD:       "Average voltage to neutral THD (%)",
 	THDL1:     "L1 Voltage to neutral THD (%)",
 	THDL2:     "L2 Voltage to neutral THD (%)",
