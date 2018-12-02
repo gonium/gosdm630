@@ -63,11 +63,17 @@ func main() {
 			Name:  "detect",
 			Usage: "Detect MODBUS devices",
 		},
+		cli.IntFlag{
+			Name:  "rate, r",
+			Value: 0,
+			Usage: "Maximum update rate in seconds per message, 0 is unlimited",
+			// Destination: &mqttRate,
+		},
 		cli.StringFlag{
-			Name:  "unique_id_format, f",
-			Value: "Meter#%d",
-			Usage: `Unique ID format.
-			Example: -f Meter#%d
+			Name:  "idformat, f",
+			Value: "Meter%d",
+			Usage: `Meter id format. Determines meter id for REST and MQTT.
+			Example: -f Meter%d
 			The %d is replaced by the device ID`,
 		},
 		cli.BoolFlag{
@@ -92,7 +98,7 @@ func main() {
 		cli.StringFlag{
 			Name:  "topic, t",
 			Value: "sdm",
-			Usage: "MQTT: Topic name to/from which to publish/subscribe. Set empty to disable publishing.",
+			Usage: "MQTT: Base topic. Set empty to disable publishing.",
 			// Destination: &mqttTopic,
 		},
 		cli.StringFlag{
@@ -113,27 +119,21 @@ func main() {
 			Usage: "MQTT: ClientID",
 			// Destination: &mqttClientID,
 		},
-		cli.IntFlag{
-			Name:  "rate, r",
-			Value: 0,
-			Usage: "MQTT: Maximum update rate in seconds per message, 0 is unlimited",
-			// Destination: &mqttRate,
-		},
 		cli.BoolFlag{
 			Name:  "clean, l",
-			Usage: "MQTT: Set Clean Session (default false)",
+			Usage: "MQTT: Set Clean Session (default: false)",
 			// Destination: &mqttCleanSession,
 		},
 		cli.IntFlag{
 			Name:  "qos, q",
 			Value: 0,
-			Usage: "MQTT: Quality of Service 0,1,2 (default 0)",
+			Usage: "MQTT: Quality of Service 0,1,2",
 			// Destination: &mqttQos,
 		},
 		cli.StringFlag{
 			Name:  "homie",
 			Value: "homie",
-			Usage: "MQTT: Homie IOT discovery base topic. Set empty to disable. See homieiot.github.io for details.",
+			Usage: "MQTT: Homie IoT discovery base topic (homieiot.github.io). Set empty to disable.",
 		},
 	}
 
@@ -143,7 +143,7 @@ func main() {
 		}
 
 		// Set unique ID format
-		UniqueIdFormat = c.String("unique_id_format")
+		UniqueIdFormat = c.String("idformat")
 
 		// Parse the devices parameter
 		deviceslice := strings.Split(c.String("devices"), ",")
@@ -208,13 +208,13 @@ func main() {
 			if c.String("homie") != "" {
 				homieRunner := HomieRunner{MqttClient: mqtt}
 				homieRunner.Register(c.String("homie"), meters, qe)
-				go homieRunner.Run(tee.Attach(), c.Int("rate"))
+				go homieRunner.Run(tee.Attach(), 0)
 			}
 
 			// start "normal" mqtt handler after homie setup
 			if c.String("topic") != "" {
 				mqttRunner := MqttRunner{MqttClient: mqtt}
-				go mqttRunner.Run(tee.Attach(), c.Int("rate"))
+				go mqttRunner.Run(tee.Attach(), 0)
 			}
 		}
 
@@ -229,7 +229,7 @@ func main() {
 		go mc.Consume()
 
 		// start the scheduler
-		go scheduler.Run()
+		go scheduler.Run(c.Int("rate"))
 
 		Run_httpd(
 			mc,

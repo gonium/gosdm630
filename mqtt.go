@@ -27,6 +27,23 @@ func (r *RateMap) Allowed(rate int, topic string) bool {
 	return false
 }
 
+func (r *RateMap) WaitForCooldown(rate int, topic string) {
+	if rate == 0 {
+		return
+	}
+
+	t := (*r)[topic]
+	waituntil := t + int64(rate)*1e9 // use ns
+	now := time.Now().UnixNano()
+
+	if waituntil > now {
+		time.Sleep(time.Until(time.Unix(0, waituntil)))
+		(*r)[topic] = waituntil
+	} else {
+		(*r)[topic] = now
+	}
+}
+
 type MqttClient struct {
 	client    MQTT.Client
 	mqttTopic string

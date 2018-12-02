@@ -1,6 +1,7 @@
 package sdm630
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -52,13 +53,19 @@ func (q *MeterScheduler) SetCache(mc *MeasurementCache) {
 	q.mc = mc
 }
 
-func (q *MeterScheduler) produceSnips(out QuerySnipChannel) {
+func (q *MeterScheduler) produceSnips(out QuerySnipChannel, rate int) {
+	rateMap := make(RateMap)
+
 	for {
 		for _, meter := range q.meters {
 			operations := meter.Producer.Produce()
 			for _, operation := range operations {
 				// Check if meter is still valid
 				if meter.GetState() != UNAVAILABLE {
+					// rate limiting
+					topic := fmt.Sprintf("%d.%d", meter.DeviceId, operation.OpCode)
+					rateMap.WaitForCooldown(rate, topic)
+
 					snip := NewQuerySnip(meter.DeviceId, operation)
 					q.out <- snip
 				}
@@ -82,11 +89,11 @@ func (q *MeterScheduler) supervisor() {
 	}
 }
 
-func (q *MeterScheduler) Run() {
+func (q *MeterScheduler) Run(rate int) {
 	source := make(QuerySnipChannel)
 
 	go q.supervisor()
-	go q.produceSnips(source)
+	go q.produceSnips(source, rate)
 
 	for {
 		select {
