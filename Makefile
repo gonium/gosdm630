@@ -30,7 +30,7 @@ clean:
 
 dep:
 	@echo "Installing embed tool"
-	env GO111MODULE=on go get github.com/aprice/embed
+	env GO111MODULE=on go get github.com/aprice/embed/loader
 	env GO111MODULE=on go install github.com/aprice/embed/cmd/embed
 
 .PHONY: all build binaries assets release test clean dep
