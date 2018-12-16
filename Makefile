@@ -23,7 +23,7 @@ release: test clean assets
 
 test:
 	@echo "Running testsuite"
-	env GO111MODULE=on go test github.com/gonium/gosdm/...
+	env GO111MODULE=on go test
 
 clean:
 	rm -rf bin/ pkg/ *.zip
