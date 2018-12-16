@@ -1,7 +1,6 @@
 PWD := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 BIN := $(PWD)/bin
 BUILD := env GO111MODULE=on GOBIN=$(BIN) go install ./...
-GOPATH := $(shell go env GOPATH)
 
 all: build
 
@@ -23,14 +22,13 @@ release: test clean assets
 
 test:
 	@echo "Running testsuite"
-	env GO111MODULE=on go test
+	env GO111MODULE=on go test ./...
 
 clean:
 	rm -rf bin/ pkg/ *.zip
 
 dep:
 	@echo "Installing embed tool"
-	env GO111MODULE=on go get github.com/aprice/embed
 	env GO111MODULE=on go install github.com/aprice/embed/cmd/embed
 	env GO111MODULE=on go install golang.org/x/tools/cmd/stringer
 
