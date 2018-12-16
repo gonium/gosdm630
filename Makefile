@@ -16,7 +16,7 @@ binaries:
 assets:
 	./hash.sh
 	@echo "Generating embedded assets"
-	$(GOPATH)/bin/embed http.go
+	env GO111MODULE=on go generate ./...
 
 release: test clean assets
 	./build.sh
