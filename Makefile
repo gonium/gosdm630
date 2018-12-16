@@ -23,15 +23,12 @@ release: test clean assets
 
 test:
 	@echo "Running testsuite"
-	env GO111MODULE=on go test
+	env GO111MODULE=on go test github.com/gonium/gosdm/...
 
 clean:
 	rm -rf bin/ pkg/ *.zip
 
 dep:
-	@echo "Installing vendor dependencies"
-	dep ensure
-
 	@echo "Installing embed tool"
 	env GO111MODULE=on go get github.com/aprice/embed/cmd/embed
 	env GO111MODULE=on go install github.com/aprice/embed/cmd/embed
