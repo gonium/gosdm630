@@ -6,6 +6,8 @@ go:
 go_import_path: github.com/gonium/gosdm630
 env:
   - "PATH=/home/travis/gopath/bin:$PATH"
+install:
+  - make dep
 script:
   - make
   - make test
