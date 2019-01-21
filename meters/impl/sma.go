@@ -50,7 +50,10 @@ func NewSMAProducer() Producer {
 		HeatSinkTemp: 219, // int16 + scaler
 	}
 	return &SMAProducer{
-		SunSpecCore{ops},
+		SunSpecCore{
+			Opcodes: ops,
+			Offset:  0,
+		},
 	}
 }
 

@@ -34,6 +34,7 @@ func RTUUint16ToFloat64WithNaN(b []byte) float64 {
 
 type SunSpecCore struct {
 	Opcodes
+	Offset uint16
 }
 
 func (p *SunSpecCore) ConnectionType() ConnectionType {
@@ -81,7 +82,7 @@ func (p *SunSpecCore) stringDecode(b []byte, reg int, len int) string {
 func (p *SunSpecCore) snip(iec Measurement, readlen uint16) Operation {
 	return Operation{
 		FuncCode: ReadHoldingReg,
-		OpCode:   sunspecBase + p.Opcode(iec) - 1, // adjust according to docs
+		OpCode:   sunspecBase + p.Opcode(iec) - p.Offset, // adjust according to docs
 		ReadLen:  readlen,
 		IEC61850: iec,
 	}
@@ -142,8 +143,8 @@ func (p *SunSpecCore) scaleSnip16(splitter func(...Measurement) Splitter, iecs .
 	// read register block
 	op := Operation{
 		FuncCode: ReadHoldingReg,
-		OpCode:   sunspecBase + min - 1, // adjust according to docs
-		ReadLen:  max - min + 2,         // registers plus int16 scale factor
+		OpCode:   sunspecBase + min - p.Offset, // adjust according to docs
+		ReadLen:  (max - min + 1) + 1,          // registers plus int16 scale factor
 		IEC61850: Split,
 		Splitter: splitter(iecs...),
 	}
@@ -190,7 +191,7 @@ func (p *SunSpecCore) mkBlockSplitter(dataSize uint16, valFunc func([]byte) floa
 			}
 
 			op := SplitResult{
-				OpCode:   sunspecBase + opcode - 1,
+				OpCode:   sunspecBase + opcode - p.Offset,
 				IEC61850: iec,
 				Value:    scaler * val,
 			}

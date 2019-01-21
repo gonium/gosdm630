@@ -74,7 +74,10 @@ func NewKostalProducer() Producer {
 		*/
 	}
 	return &KostalProducer{
-		SunSpecCore{ops},
+		SunSpecCore{
+			Opcodes: ops,
+			Offset:  0,
+		},
 	}
 }
 

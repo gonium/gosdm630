@@ -44,7 +44,10 @@ func NewSEProducer() Producer {
 		HeatSinkTemp: 104, // + scaler
 	}
 	return &SEProducer{
-		SunSpecCore{ops},
+		SunSpecCore{
+			Opcodes: ops,
+			Offset:  1,
+		},
 	}
 }
 
