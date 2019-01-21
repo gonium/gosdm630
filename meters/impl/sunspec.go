@@ -59,7 +59,7 @@ func (p *SunSpecCore) DecodeSunSpecCommonBlock(b []byte) (SunSpecDeviceDescripto
 		return res, errors.New("Could not read SunSpec device descriptor")
 	}
 
-	u := binary.BigEndian.Uint32(b[sunspecID-1:])
+	u := binary.BigEndian.Uint32(b[sunspecID-p.Offset:])
 	if u != sunspecSignature {
 		return res, errors.New("Invalid SunSpec device signature")
 	}
@@ -72,9 +72,9 @@ func (p *SunSpecCore) DecodeSunSpecCommonBlock(b []byte) (SunSpecDeviceDescripto
 	return res, nil
 }
 
-func (p *SunSpecCore) stringDecode(b []byte, reg int, len int) string {
-	start := 2 * (reg - 1)
-	end := 2 * (reg + len - 1)
+func (p *SunSpecCore) stringDecode(b []byte, reg uint16, len uint16) string {
+	start := 2 * (reg - p.Offset)
+	end := 2 * (reg + len - p.Offset)
 	// trim space and null
 	return strings.TrimRight(string(b[start:end-1]), " \x00")
 }
