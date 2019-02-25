@@ -37,6 +37,11 @@ func NewABBProducer() Producer {
 		ImportL2:  0x5464,
 		ImportL3:  0x5468,
 		Import:    0x5000,
+		
+		ExportL1:  0x546C,
+		ExportL2:  0x5470,
+		ExportL3:  0x5474,
+		Export:    0x5004,
 
 		Cosphi:   0x5B3A,
 		CosphiL1: 0x5B3B,
@@ -111,6 +116,7 @@ func (p *ABBProducer) Produce() (res []Operation) {
 		VoltageL1, VoltageL2, VoltageL3,
 		CurrentL1, CurrentL2, CurrentL3,
 		Power, PowerL1, PowerL2, PowerL3,
+		Cosphi, CosphiL1, CosphiL2, CosphiL3,
 	} {
 		res = append(res, p.snip32(op, 10))
 	}
@@ -122,13 +128,8 @@ func (p *ABBProducer) Produce() (res []Operation) {
 	}
 
 	for _, op := range []Measurement{
-		Cosphi, CosphiL1, CosphiL2, CosphiL3,
-	} {
-		res = append(res, p.snip16(op))
-	}
-
-	for _, op := range []Measurement{
 		Import, ImportL1, ImportL2, ImportL3,
+		Export, ExportL1, ExportL2, ExportL3,
 	} {
 		res = append(res, p.snip64(op,100))
 	}
