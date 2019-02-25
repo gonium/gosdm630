@@ -83,11 +83,35 @@ func (p *ABBProducer) snip16(iec Measurement, scaler ...float64) Operation {
 	return snip
 }
 
+// snip16i creates modbus operation for single register
+func (p *ABBProducer) snip16i(iec Measurement, scaler ...float64) Operation {
+	snip := p.snip(iec, 1)
+
+	snip.Transform = RTUInt16ToFloat64 // default conversion
+	if len(scaler) > 0 {
+		snip.Transform = MakeScaledTransform(snip.Transform, scaler[0])
+	}
+
+	return snip
+}
+
 // snip32 creates modbus operation for double register
 func (p *ABBProducer) snip32(iec Measurement, scaler ...float64) Operation {
 	snip := p.snip(iec, 2)
 
 	snip.Transform = RTUUint32ToFloat64 // default conversion
+	if len(scaler) > 0 {
+		snip.Transform = MakeScaledTransform(snip.Transform, scaler[0])
+	}
+
+	return snip
+}
+
+// snip32i creates modbus operation for double register
+func (p *ABBProducer) snip32i(iec Measurement, scaler ...float64) Operation {
+	snip := p.snip(iec, 2)
+
+	snip.Transform = RTUInt32ToFloat64 // default conversion
 	if len(scaler) > 0 {
 		snip.Transform = MakeScaledTransform(snip.Transform, scaler[0])
 	}
@@ -115,16 +139,26 @@ func (p *ABBProducer) Produce() (res []Operation) {
 	for _, op := range []Measurement{
 		VoltageL1, VoltageL2, VoltageL3,
 		CurrentL1, CurrentL2, CurrentL3,
-		Power, PowerL1, PowerL2, PowerL3,
-		Cosphi, CosphiL1, CosphiL2, CosphiL3,
 	} {
 		res = append(res, p.snip32(op, 10))
+	}
+	
+	for _, op := range []Measurement{
+		Cosphi, CosphiL1, CosphiL2, CosphiL3,
+	} {
+		res = append(res, p.snip16i(op, 10))
 	}
 
 	for _, op := range []Measurement{
 		Frequency,
 	} {
 		res = append(res, p.snip16(op,100))
+	}
+	
+	for _, op := range []Measurement{
+		Power, PowerL1, PowerL2, PowerL3,
+	} {
+		res = append(res, p.snip32i(op, 10))
 	}
 
 	for _, op := range []Measurement{
