@@ -28,10 +28,15 @@ func NewABBProducer() Producer {
 		CurrentL2: 0x5B0E,
 		CurrentL3: 0x5B10,
 
-		Power:   0x5B24, // Apparent Power
-		PowerL1: 0x5B26,
-		PowerL2: 0x5B28,
-		PowerL3: 0x5B2A,
+		Power:   0x5B14,
+		PowerL1: 0x5B16,
+		PowerL2: 0x5B18,
+		PowerL3: 0x5B1A,
+		
+		ImportL1:  0x5460,
+		ImportL2:  0x5464,
+		ImportL3:  0x5468,
+		Import:    0x5000,
 
 		Cosphi:   0x5B3A,
 		CosphiL1: 0x5B3B,
@@ -48,7 +53,7 @@ func (p *ABBProducer) Type() string {
 }
 
 func (p *ABBProducer) Description() string {
-	return "ABB B-Series meters"
+	return "ABB A/B-Series meters"
 }
 
 func (p *ABBProducer) snip(iec Measurement, readlen uint16) Operation {
@@ -85,6 +90,18 @@ func (p *ABBProducer) snip32(iec Measurement, scaler ...float64) Operation {
 	return snip
 }
 
+// snip64 creates modbus operation for double register
+func (p *ABBProducer) snip64(iec Measurement, scaler ...float64) Operation {
+	snip := p.snip(iec, 4)
+
+	snip.Transform = RTUUint64ToFloat64 // default conversion
+	if len(scaler) > 0 {
+		snip.Transform = MakeScaledTransform(snip.Transform, scaler[0])
+	}
+
+	return snip
+}
+
 func (p *ABBProducer) Probe() Operation {
 	return p.snip16(VoltageL1)
 }
@@ -95,14 +112,25 @@ func (p *ABBProducer) Produce() (res []Operation) {
 		CurrentL1, CurrentL2, CurrentL3,
 		Power, PowerL1, PowerL2, PowerL3,
 	} {
-		res = append(res, p.snip32(op, 100))
+		res = append(res, p.snip32(op, 10))
+	}
+
+	for _, op := range []Measurement{
+		Frequency,
+	} {
+		res = append(res, p.snip16(op,100))
 	}
 
 	for _, op := range []Measurement{
 		Cosphi, CosphiL1, CosphiL2, CosphiL3,
-		Frequency,
 	} {
 		res = append(res, p.snip16(op))
+	}
+
+	for _, op := range []Measurement{
+		Import, ImportL1, ImportL2, ImportL3,
+	} {
+		res = append(res, p.snip64(op,100))
 	}
 
 	return res
