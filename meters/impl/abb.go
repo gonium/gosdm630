@@ -146,7 +146,7 @@ func (p *ABBProducer) Produce() (res []Operation) {
 	for _, op := range []Measurement{
 		Cosphi, CosphiL1, CosphiL2, CosphiL3,
 	} {
-		res = append(res, p.snip16i(op, 10))
+		res = append(res, p.snip16i(op, 1000))
 	}
 
 	for _, op := range []Measurement{
