@@ -133,6 +133,12 @@ link for more information.
 
 ## Software installation
 
+### Using Docker
+
+The easiest way to run gosdm is using the docker image:
+
+	docker run -p 8080:8080 --device=/dev/ttyUSB0 andig/gosdm -a /dev/ttyUSB0 -u 0.0.0.0:8080 -d sdm:1
+
 ### Using the precompiled binaries
 
 You can use the [precompiled releases](https://github.com/gonium/gosdm630/releases) if you like. Just
@@ -171,18 +177,18 @@ For a single platform like the Raspberry Pi binary, use
 Now fire up the software:
 
 ````
-$ ./bin/sdm630 --help
+$ ./bin/sdm --help
 NAME:
    sdm - SDM modbus daemon
 
 USAGE:
-   sdm630 [global options] command [command options] [arguments...]
+   sdm [global options] command [command options] [arguments...]
 
 COMMANDS:
      help, h  Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-   --serialadapter value, -s value     path to serial RTU device (default: "/dev/ttyUSB0")
+   --serialadapter value, -a value     path to serial RTU device (default: "/dev/ttyUSB0")
    --comset value, -c value            which communication parameter set to use. Valid sets are
                                          1:  2400 baud, 8N1
                                          2:  9600 baud, 8N1
@@ -215,7 +221,7 @@ GLOBAL OPTIONS:
 
 A typical invocation looks like this:
 
-    $ ./bin/sdm630 -s /dev/ttyUSB0 -d janitza:26,sdm:1
+    $ ./bin/sdm -a /dev/ttyUSB0 -d janitza:26,sdm:1
     2017/01/25 16:34:26 Connecting to RTU via /dev/ttyUSB0
     2017/01/25 16:34:26 Starting API at :8080
 
@@ -232,14 +238,14 @@ web page that updates itself with the latest values:
 
 You simply copy the binary from the ``bin`` subdirectory to the RPi
 and start it. I usually put the binary into ``/usr/local/bin`` and
-rename it to ``sdm630``. The following sytemd unit can be used to
+rename it to ``sdm``. The following sytemd unit can be used to
 start the service (put this into ``/etc/systemd/system``):
 
     [Unit]
     Description=SDM630 via HTTP API
     After=syslog.target
     [Service]
-    ExecStart=/usr/local/bin/sdm630 -s /dev/ttyAMA0
+    ExecStart=/usr/local/bin/sdm -d /dev/ttyAMA0
     Restart=always
     [Install]
     WantedBy=multi-user.target
@@ -247,11 +253,11 @@ start the service (put this into ``/etc/systemd/system``):
 You might need to adjust the ``-s`` parameter depending on where your
 RS485 adapter is connected. Then, use
 
-    # systemctl start sdm630
+    # systemctl start sdm
 
 to test your installation. If you're satisfied use
 
-    # systemctl enable sdm630
+    # systemctl enable sdm
 
 to start the service at boot time automatically.
 

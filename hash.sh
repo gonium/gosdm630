@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 HASH=$(git rev-parse HEAD | head -c8)
 TAG=$(git describe --abbrev=0 --tags)

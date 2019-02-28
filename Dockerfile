@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.0-experimental
+
 ############################
 # STEP 1 build executable binary
 ############################
@@ -7,7 +9,7 @@ FROM golang:alpine as builder
 # Install git + SSL ca certificates.
 # Git is required for fetching the dependencies.
 # Ca-certificates is required to call HTTPS endpoints.
-RUN apk update && apk add --no-cache git ca-certificates tzdata alpine-sdk bash && update-ca-certificates
+RUN apk update && apk add --no-cache git ca-certificates tzdata alpine-sdk && update-ca-certificates
 
 # Create appuser
 RUN adduser -D -g '' appuser
@@ -15,14 +17,12 @@ RUN adduser -D -g '' appuser
 WORKDIR /build
 COPY . .
 
-# Fetch dependencies.
-
-# Using go mod.
-RUN go mod download
-RUN ["/bin/bash", "-c", "make assets"]
-
 # Build the binary
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -a -installsuffix cgo -o /go/bin/sdm cmd/sdm/main.go
+RUN make assets
+ENV CGO_ENABLED=0
+ARG GOOS=linux
+# RUN g-mount=target=/root/.cache,type=cache go build -ldflags="-w -s" -a -installsuffix cgo -o /go/bin/sdm cmd/sdm/main.go
+RUN go build -ldflags="-w -s" -a -installsuffix cgo -o /go/bin/sdm cmd/sdm/main.go
 
 #############################
 ## STEP 2 build a small image
