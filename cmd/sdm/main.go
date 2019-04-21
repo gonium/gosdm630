@@ -330,11 +330,11 @@ func main() {
 			waitForSignal(os.Interrupt, os.Kill)
 			log.Println("Received signal - stopping")
 			cancelScheduler() // cancel scheduler
-			select {          // wait for Run methods attached to tee to finish
-			case <-tee.Done():
-				log.Println("Stopped")
-				os.Exit(0)
-			}
+
+			// wait for Run methods attached to tee to finish
+			<-tee.Done()
+			log.Println("Stopped")
+			os.Exit(0)
 		}()
 
 		Run_httpd(
