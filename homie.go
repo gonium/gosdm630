@@ -131,9 +131,7 @@ func (m *HomieRunner) publishProperties(subtopic string, meter *Meter, qe *Modbu
 			Operation: op,
 		}
 		if b, err := qe.Query(snip); err == nil {
-			for _, snip := range qe.Transform(snip, b) {
-				snips = append(snips, snip)
-			}
+			snips = append(snips, qe.Transform(snip, b)...)
 		}
 	}
 
@@ -183,9 +181,6 @@ func (m *HomieRunner) unpublish(subtopic string) {
 
 		topic := msg.Topic()
 		token := m.client.Publish(topic, byte(m.mqttQos), true, []byte{})
-		if m.verbose {
-			// log.Printf("MQTT: unpublish %s", topic)
-		}
 
 		mux.Lock()
 		defer mux.Unlock()
@@ -194,17 +189,15 @@ func (m *HomieRunner) unpublish(subtopic string) {
 	mux.Unlock()
 
 	// wait for timeout according to specification
-	select {
-	case <-time.After(timeout):
-		mux.Lock()
-		defer mux.Unlock()
+	<-time.After(timeout)
+	mux.Lock()
+	defer mux.Unlock()
 
-		// stop listening
-		m.client.Unsubscribe(topic)
+	// stop listening
+	m.client.Unsubscribe(topic)
 
-		// wait for tokens
-		for _, token := range tokens {
-			m.WaitForToken(token)
-		}
+	// wait for tokens
+	for _, token := range tokens {
+		m.WaitForToken(token)
 	}
 }

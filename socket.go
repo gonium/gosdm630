@@ -40,12 +40,10 @@ func (c *Client) writePump() {
 		c.conn.Close()
 	}()
 	for {
-		select {
-		case msg := <-c.send:
-			c.conn.SetWriteDeadline(time.Now().Add(socketWriteWait))
-			if err := c.conn.WriteMessage(websocket.TextMessage, msg); err != nil {
-				return
-			}
+		msg := <-c.send
+		c.conn.SetWriteDeadline(time.Now().Add(socketWriteWait))
+		if err := c.conn.WriteMessage(websocket.TextMessage, msg); err != nil {
+			return
 		}
 	}
 }
