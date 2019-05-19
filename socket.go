@@ -41,7 +41,9 @@ func (c *Client) writePump() {
 	}()
 	for {
 		msg := <-c.send
-		c.conn.SetWriteDeadline(time.Now().Add(socketWriteWait))
+		if err := c.conn.SetWriteDeadline(time.Now().Add(socketWriteWait)); err != nil {
+			return
+		}
 		if err := c.conn.WriteMessage(websocket.TextMessage, msg); err != nil {
 			return
 		}
