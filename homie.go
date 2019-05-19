@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	version   = "3.0.1"
-	nodeTopic = "meter"
-	timeout   = 500 * time.Millisecond
+	specVersion = "3.0.1"
+	nodeTopic   = "meter"
+	timeout     = 500 * time.Millisecond
 )
 
 type HomieRunner struct {
@@ -79,7 +79,7 @@ func (m *HomieRunner) publishMeter(meter *Meter, qe *ModbusEngine) {
 	m.unpublish(subTopic)
 
 	// device
-	m.publish(subTopic+"/$homie", version)
+	m.publish(subTopic+"/$homie", specVersion)
 	m.publish(subTopic+"/$name", "GoSDM")
 	m.publish(subTopic+"/$state", "ready")
 	// m.publish(subTopic+"/$implementation", "GoSDM")
