@@ -1,20 +1,24 @@
+.PHONY: default clean checks build binaries assets release test test-release
+
 TAG_NAME := $(shell git tag -l --contains HEAD)
 SHA := $(shell git rev-parse --short HEAD)
 VERSION := $(if $(TAG_NAME),$(TAG_NAME),$(SHA))
 
-PWD := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
-BIN := $(PWD)/bin
-# BUILD := GO111MODULE=on GOBIN=$(BIN) go install -v -ldflags '-X "main.version=${VERSION}" -X "main.commit=${SHA}" -X "main.date=${BUILD_DATE}"' ./...
+BUILD_DATE := $(shell date -u '+%Y-%m-%d_%H:%M:%S')
 
-all: build
+default: clean checks test build
+
+clean:
+	rm -rf bin/ pkg/ *.zip
+
+checks:
+	golangci-lint -e U1000 -e sunspecModelID run
 
 build: assets binaries
 
 binaries:
-	@echo "Building for host platform"
-	GO111MODULE=on GOBIN=$(BIN) go install -v -ldflags '-X "sdm630.Version=${VERSION}" -X "sdm630.Commit=${SHA}"' ./...
-	@echo "Created binaries:"
-	@ls -1 bin
+	@echo Version: $(VERSION) $(BUILD_DATE)
+	go build -v -ldflags '-X "sdm630.Version=${VERSION}" -X "sdm630.Commit=${SHA}"' ./...
 
 assets:
 	@echo "Generating embedded assets"
@@ -27,7 +31,5 @@ test:
 	@echo "Running testsuite"
 	GO111MODULE=on go test ./...
 
-clean:
-	rm -rf bin/ pkg/ *.zip
-
-.PHONY: all build binaries assets release test clean
+test-release:
+	goreleaser --snapshot --skip-publish --rm-dist

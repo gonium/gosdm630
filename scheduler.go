@@ -205,7 +205,7 @@ func (q *MeterScheduler) handleControlSnips() {
 				controlSnip.DeviceId, controlSnip.Message)
 			if meter.State() == AVAILABLE && q.mc != nil {
 				// purge cache if present
-				q.mc.Purge(meter.DeviceId)
+				_ = q.mc.Purge(meter.DeviceId)
 			}
 			meter.SetState(UNAVAILABLE)
 		case CONTROLSNIP_OK:
