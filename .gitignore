@@ -46,3 +46,5 @@ release/
 vendor/
 dist/
 sdm
+manifest.json
+linux-*.Dockerfile
