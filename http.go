@@ -19,7 +19,7 @@ const (
 	devAssets                    = false
 )
 
-const (
+var (
 	Version = "unknown version"
 	Commit  = "unknown commit"
 )
