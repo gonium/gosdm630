@@ -11,14 +11,14 @@ default: clean checks test build
 clean:
 	rm -rf bin/ pkg/ *.zip
 
-checks:
+checks: assets
 	golangci-lint -e U1000 -e sunspecModelID run
 
 build: assets binaries
 
 binaries:
 	@echo Version: $(VERSION) $(BUILD_DATE)
-	go build -v -ldflags '-X "sdm630.Version=${VERSION}" -X "sdm630.Commit=${SHA}"' ./...
+	go build -v -ldflags '-X "github.com/gonium/gosdm630.Version=${VERSION}" -X "github.com/gonium/gosdm630.Commit=${SHA}"' ./cmd/sdm
 
 assets:
 	@echo "Generating embedded assets"

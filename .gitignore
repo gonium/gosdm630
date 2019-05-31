@@ -44,3 +44,5 @@ internal/meters/measurement_string.go
 .vscode/
 release/
 vendor/
+dist/
+sdm
