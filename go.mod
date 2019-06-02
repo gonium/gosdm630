@@ -1,22 +1,21 @@
 module github.com/gonium/gosdm630
 
 require (
-	github.com/eclipse/paho.mqtt.golang v1.2.0
-	github.com/google/go-github v17.0.0+incompatible // indirect
-	github.com/google/go-querystring v1.0.0 // indirect
+	github.com/aprice/embed v0.0.0-20171223211210-e0f543275bf966271e2c3b3ab70265f635f0394a
+	github.com/boltdb/bolt v1.3.1
+	github.com/eclipse/paho.mqtt.golang v1.1.1
+	github.com/goburrow/modbus v0.1.0
+	github.com/goburrow/serial v0.1.0
+	github.com/gorilla/context v1.1.1
 	github.com/gorilla/handlers v1.4.0
-	github.com/gorilla/mux v1.7.2
+	github.com/gorilla/mux v1.6.2
 	github.com/gorilla/websocket v1.4.0
-	github.com/grid-x/modbus v0.0.0-20190318150248-46005d8da8d6
-	github.com/grid-x/serial v0.0.0-20171015094157-98648473d6ff // indirect
-	github.com/hashicorp/go-version v1.2.0 // indirect
-	github.com/mjibson/esc v0.2.0
-	github.com/pkg/errors v0.8.1 // indirect
-	github.com/tcnksm/go-latest v0.0.0-20170313132115-e3007ae9052e
-	golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f // indirect
-	golang.org/x/net v0.0.0-20190514140710-3ec191127204 // indirect
-	golang.org/x/sys v0.0.0-20190516110030-61b9204099cb // indirect
-	golang.org/x/text v0.3.2 // indirect
-	golang.org/x/tools v0.0.0-20190517183331-d88f79806bbd
+	github.com/jcuga/golongpoll v0.0.0-20160821025152-6f70b008d155
+	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
+	github.com/spf13/pflag v1.0.3 // indirect
+	github.com/tdewolff/minify v2.3.5+incompatible // indirect
+	github.com/tdewolff/parse v2.3.3+incompatible // indirect
+	golang.org/x/net v0.0.0-20181003013248-f5e5bdd77824
+	golang.org/x/sys v0.0.0-20181004145325-8469e314837c
 	gopkg.in/urfave/cli.v1 v1.20.0
 )

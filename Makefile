@@ -1,36 +1,38 @@
-.PHONY: default clean checks test build assets binaries publish-images test-release
+PWD := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+BIN := $(PWD)/bin
+BUILD := GOBIN=$(BIN) go install ./...
+GOPATH := $(shell go env GOPATH)
 
-TAG_NAME := $(shell git tag -l --contains HEAD)
-SHA := $(shell git rev-parse --short HEAD)
-VERSION := $(if $(TAG_NAME),$(TAG_NAME),$(SHA))
+all: build
 
-BUILD_DATE := $(shell date -u '+%Y-%m-%d_%H:%M:%S')
+build: assets binaries
 
-default: clean checks test build
+binaries:
+	@echo "Building for host platform"
+	$(BUILD)
+	@echo "Created binaries:"
+	@ls -1 bin
+
+assets:
+	@echo "Generating embedded assets"
+	$(GOPATH)/bin/embed http.go
+
+release: test clean assets
+	./build.sh
+
+test:
+	@echo "Running testsuite"
+	env GO111MODULE=on go test
 
 clean:
 	rm -rf bin/ pkg/ *.zip
 
-checks: assets
-	golangci-lint run
+dep:
+	@echo "Installing vendor dependencies"
+	dep ensure
 
-test:
-	@echo "Running testsuite"
-	GO111MODULE=on go test ./...
+	@echo "Installing embed tool"
+	env GO111MODULE=on go get github.com/aprice/embed/cmd/embed
+	env GO111MODULE=on go install github.com/aprice/embed/cmd/embed
 
-build: assets binaries
-
-assets:
-	@echo "Generating embedded assets"
-	GO111MODULE=on go generate ./...
-
-binaries:
-	@echo Version: $(VERSION) $(BUILD_DATE)
-	go build -v -ldflags '-X "github.com/gonium/gosdm630.Version=${VERSION}" -X "github.com/gonium/gosdm630.Commit=${SHA}"' ./cmd/sdm
-
-publish-images:
-	@echo Version: $(VERSION) $(BUILD_DATE)
-	seihon publish -v "$(TAG_NAME)" -v "latest" --image-name andig/gosdm --base-runtime-image alpine --dry-run=false
-
-test-release:
-	goreleaser --snapshot --skip-publish --rm-dist
+.PHONY: all build binaries assets release test clean dep

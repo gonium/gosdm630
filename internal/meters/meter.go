@@ -16,18 +16,9 @@ type Operation struct {
 	FuncCode  uint8
 	OpCode    uint16
 	ReadLen   uint16
-	IEC61850  Measurement
-	Splitter  Splitter     `json:"-"`
+	IEC61850  string
 	Transform RTUTransform `json:"-"`
 }
-
-type SplitResult struct {
-	OpCode   uint16
-	IEC61850 Measurement
-	Value    float64
-}
-
-type Splitter func(b []byte) []SplitResult
 
 type MeterState uint8
 
@@ -51,57 +42,39 @@ type Meter struct {
 	mux      sync.Mutex // syncs the meter state variable
 }
 
-// ConnectionType is the phyisical type of meter connection
-type ConnectionType int
-
-const (
-	// RS485 is the default modbus connection
-	RS485 ConnectionType = iota
-	// TCP is used for sunspec-compatible modbus meters
-	TCP
-)
-
-func (c ConnectionType) String() string {
-	if c == RS485 {
-		return "RS485"
-	} else {
-		return "TCP"
-	}
-}
-
 // Producer is the interface that produces query snips which represent
 // modbus operations
 type Producer interface {
-	Type() string
-	Description() string
-	ConnectionType() ConnectionType
+	GetMeterType() string
 	Produce() []Operation
 	Probe() Operation
 }
 
-// Opcodes map measurements to phyiscal registers
-type Opcodes map[Measurement]uint16
-
-// Opcode returns physical register for measurement type
-func (o *Opcodes) Opcode(iec Measurement) uint16 {
-	if opcode, ok := (*o)[iec]; ok {
-		return opcode
-	}
-
-	log.Fatalf("Undefined opcode for measurement %s", iec.String())
-	return 0
-}
-
 // NewMeterByType meter factory
 func NewMeterByType(typeid string, devid uint8) (*Meter, error) {
+	var p Producer
 	typeid = strings.ToUpper(typeid)
 
-	f, ok := Producers[typeid]
-	if !ok {
+	switch typeid {
+	case METERTYPE_SDM:
+		p = NewSDMProducer()
+	case METERTYPE_JANITZA:
+		p = NewJanitzaProducer()
+	case METERTYPE_DZG:
+		log.Println(`WARNING: The DZG DVH 4013 does not report the same
+		measurements as the other meters. Only limited functionality is
+		implemented.`)
+		p = NewDZGProducer()
+	case METERTYPE_SBC:
+		log.Println(`WARNING: The SBC ALE3 does not report the same
+		measurements as the other meters. Only limited functionality is
+		implemented.`)
+		p = NewSBCProducer()
+	default:
 		return nil, fmt.Errorf("Unknown meter type %s", typeid)
 	}
 
-	return NewMeter(devid, f()), nil
+	return NewMeter(devid, p), nil
 }
 
 func NewMeter(devid uint8, producer Producer) *Meter {
@@ -112,13 +85,13 @@ func NewMeter(devid uint8, producer Producer) *Meter {
 	}
 }
 
-func (m *Meter) SetState(newstate MeterState) {
+func (m *Meter) UpdateState(newstate MeterState) {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 	m.state = newstate
 }
 
-func (m *Meter) State() MeterState {
+func (m *Meter) GetState() MeterState {
 	m.mux.Lock()
 	defer m.mux.Unlock()
 	return m.state

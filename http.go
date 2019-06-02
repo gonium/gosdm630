@@ -12,22 +12,19 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/jcuga/golongpoll"
 )
 
 const (
 	SECONDS_BETWEEN_STATUSUPDATE = 1
-	devAssets                    = false
 )
 
-var (
-	Version = "unknown version"
-	Commit  = "unknown commit"
-)
+// Generate the embedded assets using https://github.com/aprice/embed
+//go:generate go run github.com/aprice/embed/cmd/embed -c "embed.json"
 
-//go:generate go run github.com/mjibson/esc -private -o assets.go -pkg sdm630 -prefix assets assets
-
-func mkIndexHandler(mc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
-	mainTemplate, err := _escFSString(devAssets, "/index.html")
+func MkIndexHandler(mc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
+	loader := GetEmbeddedContent()
+	mainTemplate, err := loader.GetContents("/index.html")
 	if err != nil {
 		log.Fatal("Failed to load embedded template: " + err.Error())
 	}
@@ -43,7 +40,7 @@ func mkIndexHandler(mc *MeasurementCache) func(http.ResponseWriter, *http.Reques
 			SoftwareVersion string
 			GolangVersion   string
 		}{
-			SoftwareVersion: Version,
+			SoftwareVersion: RELEASEVERSION,
 			GolangVersion:   runtime.Version(),
 		}
 		err := t.Execute(w, data)
@@ -53,7 +50,7 @@ func mkIndexHandler(mc *MeasurementCache) func(http.ResponseWriter, *http.Reques
 	})
 }
 
-func mkLastAllValuesHandler(mc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
+func MkLastAllValuesHandler(mc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		ids := mc.GetSortedIDs()
@@ -80,7 +77,7 @@ func mkLastAllValuesHandler(mc *MeasurementCache) func(http.ResponseWriter, *htt
 	})
 }
 
-func mkLastSingleValuesHandler(mc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
+func MkLastSingleValuesHandler(mc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		id, err := strconv.Atoi(vars["id"])
@@ -101,7 +98,7 @@ func mkLastSingleValuesHandler(mc *MeasurementCache) func(http.ResponseWriter, *
 	})
 }
 
-func mkLastMinuteAvgSingleHandler(mc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
+func MkLastMinuteAvgSingleHandler(mc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		id, err := strconv.Atoi(vars["id"])
@@ -122,7 +119,7 @@ func mkLastMinuteAvgSingleHandler(mc *MeasurementCache) func(http.ResponseWriter
 	})
 }
 
-func mkLastMinuteAvgAllHandler(mc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
+func MkLastMinuteAvgAllHandler(mc *MeasurementCache) func(http.ResponseWriter, *http.Request) {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		ids := mc.GetSortedIDs()
@@ -146,7 +143,7 @@ func mkLastMinuteAvgAllHandler(mc *MeasurementCache) func(http.ResponseWriter, *
 	})
 }
 
-func mkStatusHandler(s *Status) func(http.ResponseWriter, *http.Request) {
+func MkStatusHandler(s *Status) func(http.ResponseWriter, *http.Request) {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		s.Update()
@@ -156,10 +153,67 @@ func mkStatusHandler(s *Status) func(http.ResponseWriter, *http.Request) {
 	})
 }
 
-func mkSocketHandler(hub *SocketHub) func(http.ResponseWriter, *http.Request) {
+func MkSocketHandler(hub *SocketHub) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ServeWebsocket(hub, w, r)
 	}
+}
+
+type Firehose struct {
+	lpManager  *golongpoll.LongpollManager
+	in         QuerySnipChannel
+	statstream chan string
+}
+
+func NewFirehose(inChannel QuerySnipChannel, status *Status, verbose bool) *Firehose {
+	options := golongpoll.Options{}
+	// see https://github.com/jcuga/golongpoll/blob/master/longpoll.go#L81
+	//options := golongpoll.Options{
+	//	LoggingEnabled:                 false,
+	//	MaxLongpollTimeoutSeconds:      60,
+	//	MaxEventBufferSize:             250,
+	//	EventTimeToLiveSeconds:         60,
+	//	DeleteEventAfterFirstRetrieval: false,
+	//}
+	if verbose {
+		options.LoggingEnabled = true
+	}
+	manager, err := golongpoll.StartLongpoll(options)
+	if err != nil {
+		log.Fatalf("Failed to create firehose longpoll manager: %q", err)
+	}
+	// Attach a goroutine that will push meter status information
+	// periodically
+	var statusstream = make(chan string)
+	go func() {
+		for {
+			time.Sleep(SECONDS_BETWEEN_STATUSUPDATE * time.Second)
+			status.Update()
+			if bytes, err := json.Marshal(status); err == nil {
+				statusstream <- string(bytes)
+			}
+		}
+	}()
+	return &Firehose{
+		lpManager:  manager,
+		in:         inChannel,
+		statstream: statusstream,
+	}
+}
+
+func (f *Firehose) Run() {
+	for {
+		select {
+		case snip := <-f.in:
+			f.lpManager.Publish("meterupdate", snip)
+		case statupdate := <-f.statstream:
+			f.lpManager.Publish("statusupdate", statupdate)
+		}
+	}
+}
+
+func (f *Firehose) GetHandler() func(w http.ResponseWriter, r *http.Request) {
+	return f.lpManager.SubscriptionHandler
 }
 
 // serveJson decorates handler with required headers
@@ -173,6 +227,7 @@ func serveJson(f http.HandlerFunc) http.HandlerFunc {
 
 func Run_httpd(
 	mc *MeasurementCache,
+	firehose *Firehose,
 	hub *SocketHub,
 	s *Status,
 	url string,
@@ -182,23 +237,24 @@ func Run_httpd(
 	router := mux.NewRouter().StrictSlash(true)
 
 	// static
-	router.HandleFunc("/", mkIndexHandler(mc))
-
-	// individual handlers per folder
-	for _, folder := range []string{"js", "css"} {
-		prefix := fmt.Sprintf("/%s/", folder)
-		router.PathPrefix(prefix).Handler(http.StripPrefix(prefix, http.FileServer(_escDir(devAssets, prefix))))
-	}
+	router.HandleFunc("/", MkIndexHandler(mc))
+	router.PathPrefix("/js/").Handler(GetEmbeddedContent())
+	router.PathPrefix("/css/").Handler(GetEmbeddedContent())
 
 	// api
-	router.HandleFunc("/last", serveJson(mkLastAllValuesHandler(mc)))
-	router.HandleFunc("/last/{id:[0-9]+}", serveJson(mkLastSingleValuesHandler(mc)))
-	router.HandleFunc("/minuteavg", serveJson(mkLastMinuteAvgAllHandler(mc)))
-	router.HandleFunc("/minuteavg/{id:[0-9]+}", serveJson(mkLastMinuteAvgSingleHandler(mc)))
-	router.HandleFunc("/status", serveJson(mkStatusHandler(s)))
+	router.HandleFunc("/last", serveJson(MkLastAllValuesHandler(mc)))
+	router.HandleFunc("/last/{id:[0-9]+}", serveJson(MkLastSingleValuesHandler(mc)))
+	router.HandleFunc("/minuteavg", serveJson(MkLastMinuteAvgAllHandler(mc)))
+	router.HandleFunc("/minuteavg/{id:[0-9]+}", serveJson(MkLastMinuteAvgSingleHandler(mc)))
+	router.HandleFunc("/status", serveJson(MkStatusHandler(s)))
+
+	// longpoll
+	if firehose != nil {
+		router.HandleFunc("/firehose", firehose.GetHandler())
+	}
 
 	// websocket
-	router.HandleFunc("/ws", mkSocketHandler(hub))
+	router.HandleFunc("/ws", MkSocketHandler(hub))
 
 	srv := http.Server{
 		Addr:         url,

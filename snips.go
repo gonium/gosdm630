@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/gonium/gosdm630/meters"
+	. "github.com/gonium/gosdm630/internal/meters"
 )
 
 // QuerySnip represents modbus query operations
@@ -44,8 +44,8 @@ func (q *QuerySnip) MarshalJSON() ([]byte, error) {
 	}{
 		DeviceId:    q.DeviceId,
 		Value:       q.Value,
-		IEC61850:    q.IEC61850.String(),
-		Description: q.IEC61850.Description(),
+		IEC61850:    q.IEC61850,
+		Description: GetIecDescription(q.IEC61850),
 		Timestamp:   q.ReadTimestamp.UnixNano() / 1e6,
 	})
 }
@@ -57,9 +57,7 @@ type QuerySnipChannel chan QuerySnip
 type QuerySnipBroadcaster struct {
 	in         QuerySnipChannel
 	recipients []QuerySnipChannel
-	done       chan bool
 	mux        sync.Mutex // guard recipients
-	wg         sync.WaitGroup
 }
 
 // NewQuerySnipBroadcaster creates QuerySnipBroadcaster
@@ -67,40 +65,23 @@ func NewQuerySnipBroadcaster(in QuerySnipChannel) *QuerySnipBroadcaster {
 	return &QuerySnipBroadcaster{
 		in:         in,
 		recipients: make([]QuerySnipChannel, 0),
-		done:       make(chan bool),
 	}
 }
 
 // Run executes the broadcaster
 func (b *QuerySnipBroadcaster) Run() {
-	for s := range b.in {
+	for {
+		s := <-b.in
 		b.mux.Lock()
 		for _, recipient := range b.recipients {
 			recipient <- s
 		}
 		b.mux.Unlock()
 	}
-	b.stop()
 }
 
-// Done returns a channel signalling when broadcasting has stopped
-func (b *QuerySnipBroadcaster) Done() <-chan bool {
-	return b.done
-}
-
-// stop closes broadcast receiver channels and waits for run methods to finish
-func (b *QuerySnipBroadcaster) stop() {
-	b.mux.Lock()
-	defer b.mux.Unlock()
-	for _, recipient := range b.recipients {
-		close(recipient)
-	}
-	b.wg.Wait()
-	b.done <- true
-}
-
-// attach creates and attaches a QuerySnipChannel to the broadcaster
-func (b *QuerySnipBroadcaster) attach() QuerySnipChannel {
+// Attach creates and attaches a QuerySnipChannel to the broadcaster
+func (b *QuerySnipBroadcaster) Attach() QuerySnipChannel {
 	channel := make(QuerySnipChannel)
 
 	b.mux.Lock()
@@ -108,17 +89,6 @@ func (b *QuerySnipBroadcaster) attach() QuerySnipChannel {
 	b.mux.Unlock()
 
 	return channel
-}
-
-// AttachRunner attaches a Run method as broadcast receiver and adds it
-// to the waitgroup
-func (b *QuerySnipBroadcaster) AttachRunner(runner func(QuerySnipChannel)) {
-	b.wg.Add(1)
-	go func() {
-		ch := b.attach()
-		runner(ch)
-		b.wg.Done()
-	}()
 }
 
 // ControlSnip wraps control information like query success or failure.

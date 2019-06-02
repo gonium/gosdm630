@@ -40,12 +40,12 @@ func (c *Client) writePump() {
 		c.conn.Close()
 	}()
 	for {
-		msg := <-c.send
-		if err := c.conn.SetWriteDeadline(time.Now().Add(socketWriteWait)); err != nil {
-			return
-		}
-		if err := c.conn.WriteMessage(websocket.TextMessage, msg); err != nil {
-			return
+		select {
+		case msg := <-c.send:
+			c.conn.SetWriteDeadline(time.Now().Add(socketWriteWait))
+			if err := c.conn.WriteMessage(websocket.TextMessage, msg); err != nil {
+				return
+			}
 		}
 	}
 }
@@ -76,11 +76,14 @@ type SocketHub struct {
 	// Unregister requests from clients.
 	unregister chan *Client
 
+	// meter data stream
+	in QuerySnipChannel
+
 	// status stream
 	statusStream chan *Status
 }
 
-func NewSocketHub(status *Status) *SocketHub {
+func NewSocketHub(inChannel QuerySnipChannel, status *Status) *SocketHub {
 	// Attach a goroutine that will push meter status information
 	// periodically
 	var statusstream = make(chan *Status)
@@ -96,6 +99,7 @@ func NewSocketHub(status *Status) *SocketHub {
 		register:     make(chan *Client),
 		unregister:   make(chan *Client),
 		clients:      make(map[*Client]bool),
+		in:           inChannel,
 		statusStream: statusstream,
 	}
 }
@@ -118,7 +122,7 @@ func (h *SocketHub) Broadcast(i interface{}) {
 	}
 }
 
-func (h *SocketHub) Run(in QuerySnipChannel) {
+func (h *SocketHub) Run() {
 	for {
 		select {
 		case client := <-h.register:
@@ -128,10 +132,7 @@ func (h *SocketHub) Run(in QuerySnipChannel) {
 				delete(h.clients, client)
 				close(client.send)
 			}
-		case obj, ok := <-in:
-			if !ok {
-				return // break if channel closed
-			}
+		case obj := <-h.in:
 			// make sure to pass a pointer or MarshalJSON won't work
 			h.Broadcast(&obj)
 		case obj := <-h.statusStream:

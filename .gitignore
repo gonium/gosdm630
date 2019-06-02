@@ -32,19 +32,8 @@ _testmain.go
 *.test
 *.prof
 
-# created during build
-go.sum
-
-version.go
-assets.go
-embeddedassets.go
-meters/measurement_string.go
-internal/meters/measurement_string.go
-
-.vscode/
 release/
 vendor/
-dist/
-sdm
-manifest.json
-linux-*.Dockerfile
+embeddedassets.go
+
+go.sum
