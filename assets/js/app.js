@@ -4,23 +4,6 @@ var meterapp = new Vue({
 	data: {
 		meters: {},
 		message: 'Loading...'
-	},
-	methods: {
-		// populated returns true if it was called with any non-null argumnt
-		populated: function () {
-			for(var i = 0; i<arguments.length; i++) {
-				if (arguments[i] !== undefined && arguments[i] !== null && arguments[i] !== "") {
-					return true;
-				}
-			}
-			return false;
-		},
-
-		// val returns addable value: null, NaN and empty are converted to 0
-		val: function (v) {
-			v = parseFloat(v);
-			return isNaN(v) ? 0 : v;
-		}
 	}
 })
 
@@ -92,15 +75,18 @@ function meterUpdate(data) {
 
 	// extract the last update
 	var id = data["DeviceId"]
-	var type = data["IEC61850"]
-	var value = fixed(data["Value"])
-
+	var iec61850 = data["IEC61850"]
+	var reading = fixed(data["Value"])
 	// put into statusline
-	meterapp.message = "Received #" + id + " / " + type + ": " + si(value)
-
-	// create or update data table
-	var datadict = meterapp.meters[id] || {}
-	datadict[type] = value
+	meterapp.message = "Received #" + id + " / " + iec61850 + ": " + si(reading)
+	// update data table
+	var datadict = meterapp.meters[id]
+	if (!datadict) {
+		// this is the first time we touch this meter, create an
+		// empty dict
+		var datadict = {}
+	}
+	datadict[iec61850] = reading
 	// make update reactive, see
 	// https://vuejs.org/v2/guide/reactivity.html#Change-Detection-Caveats
 	Vue.set(meterapp.meters, id, datadict)

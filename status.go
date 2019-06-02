@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/gonium/gosdm630/meters"
+	. "github.com/gonium/gosdm630/internal/meters"
 )
 
 type MemoryStatus struct {
@@ -38,7 +38,7 @@ type Status struct {
 	Modbus           ModbusStatus
 	ConfiguredMeters []MeterStatus
 	metermap         map[uint8]*Meter
-	mux              sync.RWMutex
+	mux              sync.RWMutex `json:"-"`
 }
 
 type MeterStatus struct {
@@ -90,8 +90,8 @@ func (s *Status) Update() {
 	for id, meter := range s.metermap {
 		ms := MeterStatus{
 			Id:     id,
-			Type:   meter.Producer.Type(),
-			Status: meter.State().String(),
+			Type:   meter.Producer.GetMeterType(),
+			Status: meter.GetState().String(),
 		}
 
 		confmeters = append(confmeters, ms)

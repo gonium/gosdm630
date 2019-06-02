@@ -7,10 +7,11 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/gonium/gosdm630/meters"
+	. "github.com/gonium/gosdm630/internal/meters"
 )
 
 type MeasurementCache struct {
+	in      QuerySnipChannel
 	meters  map[uint8]MeasurementCacheItem
 	maxAge  time.Duration
 	verbose bool
@@ -23,6 +24,7 @@ type MeasurementCacheItem struct {
 
 func NewMeasurementCache(
 	meters map[uint8]*Meter,
+	inChannel QuerySnipChannel,
 	scheduler *MeterScheduler,
 	maxAge time.Duration,
 	isVerbose bool,
@@ -37,6 +39,7 @@ func NewMeasurementCache(
 	}
 
 	cache := &MeasurementCache{
+		in:      inChannel,
 		meters:  items,
 		maxAge:  maxAge,
 		verbose: isVerbose,
@@ -46,16 +49,19 @@ func NewMeasurementCache(
 	return cache
 }
 
-// Run consumes meter readings into snip cache
-func (mc *MeasurementCache) Run(in QuerySnipChannel) {
-	for snip := range in {
+func (mc *MeasurementCache) Consume() {
+	for {
+		snip := <-mc.in
 		devid := snip.DeviceId
 		// Search corresponding meter
 		if meter, ok := mc.meters[devid]; ok {
 			// add the snip to the cache
 			meter.AddSnip(snip)
+			if mc.verbose {
+				log.Printf("%s\r\n", meter.Current.String())
+			}
 		} else {
-			log.Fatalf("Snip for unknown meter received - this should not happen (%v).", snip)
+			log.Fatal("Snip for unknown meter received - this should not happen.")
 		}
 	}
 }
@@ -72,7 +78,7 @@ func (mc *MeasurementCache) Purge(deviceId byte) error {
 
 func (mc *MeasurementCache) GetSortedIDs() []byte {
 	var keys ByteSlice
-	for k := range mc.meters {
+	for k, _ := range mc.meters {
 		keys = append(keys, k)
 	}
 	sort.Sort(keys)
@@ -81,7 +87,7 @@ func (mc *MeasurementCache) GetSortedIDs() []byte {
 
 func (mc *MeasurementCache) GetCurrent(deviceId byte) (*Readings, error) {
 	if meter, ok := mc.meters[deviceId]; ok {
-		if meter.State() == AVAILABLE {
+		if meter.GetState() == AVAILABLE {
 			return &meter.Current, nil
 		}
 		return nil, fmt.Errorf("Device %d is not available.", deviceId)
@@ -91,7 +97,7 @@ func (mc *MeasurementCache) GetCurrent(deviceId byte) (*Readings, error) {
 
 func (mc *MeasurementCache) GetMinuteAvg(deviceId byte) (*Readings, error) {
 	if meter, ok := mc.meters[deviceId]; ok {
-		if meter.State() == AVAILABLE {
+		if meter.GetState() == AVAILABLE {
 			measurements := meter.Historic
 			lastminute := measurements.NotOlderThan(time.Now().Add(-1 * time.Minute))
 

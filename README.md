@@ -1,29 +1,14 @@
 # An HTTP interface to MODBUS smart meters
 
-GoSDM provides an http interface to smart meters with a MODBUS interface.
-Meter data, i.e. readings, is made accessible through REST API and MQTT.
-Communication is possible over RS485 connections as well as TCP sockets.
+This project provides a http interface to smart
+meters with a MODBUS interface. Beside the EASTRON SDM series, the
+software also supports the Janitza B23 DIN-rail meters. The meters
+provide all measured values over an RS485 connection. The software reads
+the measurements and wraps them into a HTTP interface, making it very
+easy to integrate it into your home automation system. Both a REST-style
+API and a streaming API are available.
 
-A wide range of DIN-rail meters is supported (see [supported sevices](#supported-devices)).
-
-**NOTE** Starting with version 0.7 several breaking changes were introduced. See [changelog](#changelog) for details.
-
-# Table of Contents
-
-* [Supported Devices](#supported-devices)
-* [Installation](#installation)
-  * [Hardware installation](#hardware-installation)
-  * [Software installation](#software-installation)
-  * [Running](#running)
-  * [Installation on the Raspberry Pi](#installation-on-the-raspberry-pi)
-  * [Detecting connected meters](#detecting-connected-meters)
-* [API](#api)
-  * [Rest API](#rest-api)
-  * [Websocket API](#websocket-api)
-  * [MQTT API](#mqtt-api)
-* [Changelog](#changelog)
-
-# Supported Devices
+## Supported Devices
 
 The meters have slightly different capabilities. The EASTRON SDM630 offers
 a lot of features, while the smaller devices only support basic
@@ -41,8 +26,6 @@ manuals for yourself, I could be wrong):
 | Janitza B23-312 | 3 | + | + | + | + | + | + | - | - |
 | DZG DVH4013 | 3 | + | + | - | - | + | + | - | - |
 | SBC ALE3 | 3 | + | + | + | + | + | + | - | - |
-| ABB A/B-Series | 3 | + | + | + | + | + | + | + | + |
-| SunSpec Inverters | 3 | + | + | + | + | - | + | - | - |
 
 Please note that voltage, current, power and power factor are always
 reported for each connected phase.
@@ -71,13 +54,24 @@ reported for each connected phase.
  * SBC ALE3: This compact Saia Burgess Controls meter is comparable to the SDM630:
  two tariffs, both import and export depending on meter version and compact (4TE).
  It's often used with Viessmann heat pumps.
- * SunSpec: Apart from meters, SunSpec-compatible grid inverters are supported, too. This
- includes popular devices from SolarEdge (SE3000, SE9000) and SMA (Sunny Boy and Sunny Tripower). Grid inverters
- are typically connected using ModBus over TCP.
 
 Some of my test devices have been provided by [B+G
 E-Tech](http://bg-etech.de/) - please consider to buy your meter from
 them!
+
+# Table of Contents
+
+* [Installation](#installation)
+  * [Hardware installation](#hardware-installation)
+  * [Software installation](#software-installation)
+  * [Running](#running)
+  * [Installation on the Raspberry Pi](#installation-on-the-raspberry-pi)
+  * [Detecting connected meters](#detecting-connected-meters)
+* [API](#api)
+  * [Rest API](#rest-api)
+  * [Streaming API](#streaming-api)
+* [OpenHAB integration](#openhab-integration)
+  * [How does it look like in OpenHAB?](#how-does-it-look-like-in-openhab)
 
 
 # Installation
@@ -133,12 +127,6 @@ link for more information.
 
 ## Software installation
 
-### Using Docker
-
-The easiest way to run gosdm is using the docker image:
-
-	docker run -p 8080:8080 --device=/dev/ttyUSB0 andig/gosdm -a /dev/ttyUSB0 -u 0.0.0.0:8080 -d sdm:1
-
 ### Using the precompiled binaries
 
 You can use the [precompiled releases](https://github.com/gonium/gosdm630/releases) if you like. Just
@@ -153,23 +141,38 @@ Please install the Go compiler first. Then clone this repository:
 
     git clone https://github.com/gonium/gosdm630.git
 
-You can then build the software for the host platform using the ``Makefile``:
+If you have ``make`` installed you can use the ``Makefile`` to install the tools:
+
+    $ cd gosdm630
+    $ make dep
+    Installing embed tool
+    Installing dep tool
+
+You can then build the software using the ``Makefile``:
 
     $ make
     Generating embedded assets
     Generation complete in 109.907612ms
     Building for host platform
     Created binaries:
-    sdm
+    sdm630
+    sdm630
+    sdm630_logger
+    sdm630_monitor
+    sdm_detect
 
-which creates ``./bin/sdm``. If you want to build for all platforms you can use
+As you can see two sets of binaries are built:
+
+ * ``bin/sdm630_{...}`` is the software built for the host platform
+ * ``bin/sdm630_{...}-linux-arm`` is the same for the Raspberry Pi.
+
+If you want to build for all platforms you can use
 
     $ make release
 
-which creates zipped executables for each platform in ``./release``.
-For a single platform like the Raspberry Pi binary, use
+or, for a single platform like the Raspberry Pi binary, use
 
-    $ GO111MODULE=on GOBIN=$(pwd)/bin GOOS=linux GOARCH=arm GOARM=5 go install ./...
+    $ GOOS=linux GOARCH=arm GOARM=5 make build
 
 
 ## Running
@@ -177,18 +180,18 @@ For a single platform like the Raspberry Pi binary, use
 Now fire up the software:
 
 ````
-$ ./bin/sdm --help
+$ ./bin/sdm630 --help
 NAME:
    sdm - SDM modbus daemon
 
 USAGE:
-   sdm [global options] command [command options] [arguments...]
+   sdm630 [global options] command [command options] [arguments...]
 
 COMMANDS:
      help, h  Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-   --serialadapter value, -a value     path to serial RTU device (default: "/dev/ttyUSB0")
+   --serialadapter value, -s value     path to serial RTU device (default: "/dev/ttyUSB0")
    --comset value, -c value            which communication parameter set to use. Valid sets are
                                          1:  2400 baud, 8N1
                                          2:  9600 baud, 8N1
@@ -221,7 +224,7 @@ GLOBAL OPTIONS:
 
 A typical invocation looks like this:
 
-    $ ./bin/sdm -a /dev/ttyUSB0 -d janitza:26,sdm:1
+    $ ./bin/sdm630 -s /dev/ttyUSB0 -d janitza:26,sdm:1
     2017/01/25 16:34:26 Connecting to RTU via /dev/ttyUSB0
     2017/01/25 16:34:26 Starting API at :8080
 
@@ -238,14 +241,14 @@ web page that updates itself with the latest values:
 
 You simply copy the binary from the ``bin`` subdirectory to the RPi
 and start it. I usually put the binary into ``/usr/local/bin`` and
-rename it to ``sdm``. The following sytemd unit can be used to
+rename it to ``sdm630``. The following sytemd unit can be used to
 start the service (put this into ``/etc/systemd/system``):
 
     [Unit]
     Description=SDM630 via HTTP API
     After=syslog.target
     [Service]
-    ExecStart=/usr/local/bin/sdm -d /dev/ttyAMA0
+    ExecStart=/usr/local/bin/sdm630 -s /dev/ttyAMA0
     Restart=always
     [Install]
     WantedBy=multi-user.target
@@ -253,11 +256,11 @@ start the service (put this into ``/etc/systemd/system``):
 You might need to adjust the ``-s`` parameter depending on where your
 RS485 adapter is connected. Then, use
 
-    # systemctl start sdm
+    # systemctl start sdm630
 
 to test your installation. If you're satisfied use
 
-    # systemctl enable sdm
+    # systemctl enable sdm630
 
 to start the service at boot time automatically.
 
@@ -278,12 +281,12 @@ reliably.
 ## Detecting connected meters
 
 MODBUS/RTU does not provide a mechanism to discover devices. There is no
-reliable way to detect all attached devices. The ``sdm`` tool when used
-with the `-detect` option attempts to read the L1 voltage from all valid
-device IDs and reports which one replied correctly:
+reliable way to detect all attached devices. The ``sdm_detect`` tool
+attempts to read the L1 voltage from all valid device IDs and reports
+which one replied correctly:
 
 ````
-./bin/sdm -detect
+./bin/sdm_detect
 2017/06/21 10:22:34 Starting bus scan
 2017/06/21 10:22:35 Device 1: n/a
 ...
@@ -418,36 +421,189 @@ the cabling is not a shielded, twisted wire but something that I had laying
 around. With proper cabling the error rate should be lower, though.
 
 
-## Websocket API
+## Streaming API
 
-Data read from the meters can be observed by clients in realtime using the Websocket API. As soon as new readings are available, they are pushed to connected websocket clients.
+GoSDM supports both websockets and long polling to transfer status and
+meter updates to connected clients.
 
-The websocket API is available on `/ws`. All connected clients receive status and
-meter updates for all connected meters without further subscription.
+Data read from the smart meter can be observed by clients in realtime:
+as soon as a new value is available, you will be notified.
+
+### Websocket API
+
+Websocket API is available on `/ws`. All connected clients receive status and meter
+updates for all connected meters without further subscription.
+
+### Long polling API
+
+**NOTE** Usage of the long polling API is discouraged for performance reasons. The long polling is only supported with `sdm630_http`, not with the newer `sdm630`.
+
+We're using [HTTP Long Polling as described in RFC6202](https://tools.ietf.org/html/rfc6202)
+for the data transfer. This essentially means that you can connect to an HTTP endpoint. The server
+will accept the connection and send you the new values as soon as they
+are available. Then, you either reconnect or use the same TCP connection
+for the next request. If you want to get all values, you can do the
+following:
+
+    $ while true; do curl --silent "http://localhost:8080/firehose?timeout=45&category=meterupdates" | jq; done
+
+This requests the last values in a loop with curl and pipes the result
+through jq. Of course this also closes the connection after each reply,
+so this is rather costly. In production you can leave the connection
+intact and reuse it. A resulting reading looks like this:
+
+````json
+{
+  "events": [
+    {
+      "timestamp": 1490605909544,
+      "category": "all",
+      "data": {
+        "DeviceId": 12,
+        "Value": 0.054999999701976776,
+        "IEC61850": "TotkWhExportPhsB",
+        "Description": "L2 Export (kWh)",
+        "ReadTimestamp": "2017-03-27T11:11:49.544236817+02:00"
+      }
+    }
+  ]
+}
+
+````
+
+Please note that the ``events`` structure is formatted by the long
+polling library we use. The ``data`` element contains the information
+just read from the MODBUS device. Events are emitted as soon as they are
+received over the serial connection.
+
+In addition, you can also use the firehose to receive status updates:
+
+````
+$ while true; do curl --silent "http://localhost:8080/firehose?timeout=45&category=statusupdate" | jq; done
+````
+
+responds each second with the current status, e.g.
+
+````json
+{
+  "events": [
+    {
+      "timestamp": 1501163437772,
+      "category": "statusupdate",
+      "data": {
+        "Starttime": "2017-07-27T10:21:04.790877012+02:00",
+        "UptimeSeconds": 10.000907389,
+        "Goroutines": 22,
+        "Memory": {
+          "Alloc": 3605376,
+          "HeapAlloc": 3605376
+        },
+        "Modbus": {
+          "TotalModbusRequests": 325,
+          "ModbusRequestRatePerMinute": 1943.823619582965,
+          "TotalModbusErrors": 0,
+          "ModbusErrorRatePerMinute": 0
+        },
+        "ConfiguredMeters": [
+          {
+            "Id": 26,
+            "Type": "JANITZA",
+            "Status": "available"
+          }
+        ]
+      }
+    }
+  ]
+}
+
+````
+
+### Stream Utilities
+
+We provide a simple command line utility to monitor single devices. If you
+run
+
+    $ ./bin/sdm630_monitor -d sdm:23 -u localhost:8080
+
+it will connect to the firehose and print power readings for device 23.
+Please note that this is all it does, the monitor can serve as a
+starting point for your own experiments.
+
+If you want to log data in the highest possible resolution you can use
+the ``sdm630_logger`` command:
+
+````
+$ sdm630_logger record -s 120 -f log.db
+````
+
+This will connect to the ``sdm630`` process on localhost and
+serialize all measurements into ``log.db``. Received values will be
+cached for 120 seconds and then written in bulk. We use
+[BoltDB](https://github.com/boltdb/bolt) for data storage in order to
+minimize runtime dependencies. You can use the ``inspect`` subcommand to
+get some information about the database:
+
+````
+$ ./bin/sdm630_logger inspect -f log.db
+Found 529 records:
+* First recorded on 2017-03-22 11:17:39.911271769 +0100 CET
+* Last recorded on 2017-03-22 11:39:10.099236381 +0100 CET
+````
+
+If you want to export the dataset to TSV, you can use the ``export``
+subcommand:
+
+````
+./bin/sdm630_logger export -t log.tsv -f log.db
+2017/03/27 11:22:23 Exported 529 records.
+````
+
+The ``sdm630_logger`` tool is still under development and lacks certain
+features:
+
+* The storage functions are rather inefficient and require a lot of
+storage.
+* The TSV export currently only exports the power readings.
 
 
-## MQTT API
+# OpenHAB integration
 
-Another option for receiving client updates is by using the built-in MQTT publisher.
-By default, readings are published at `/sdm/<unique id>/<reading>`. Rate limiting is possible.
+*Please note: The following integration guide was written for OpenHAB
+1.8. We currently do not have an OpenHAB 2.x instructions, but would
+appreciate any contributions.*
 
+It is very easy to translate this into OpenHAB items. I run the SDM630
+software on a Raspberry Pi with the IP ``192.168.1.44``. My items look
+like this:
 
-# Changelog
+    Group Power_Chart
+    Number Power_L1 "Strombezug L1 [%.1f W]" <power> (Power, Power_Chart) { http="<[http://192.168.1.44:8080/last/1:60000:JS(SDM630GetL1Power.js)]" }
 
-## 0.8 (unreleased)
+I'm using the http plugin to call the ``/last/1`` endpoint every 60
+seconds. Then, I feed the result into a JSON transform stored in
+``SDM630GetL1Power.js``. The contents of
+``transform/SDM630GetL1Power.js`` looks like this:
 
-  - Renamed `sdm630` command to `sdm` which also includes `sdm_detect` now
-  - Remove legacy commands. `sdm630_logger`, `sdm630_monitor` and `sdm630_http` are no longer supported. `sdm` is now the single command provided. The legacy commands are still available in the [0.7 version](https://github.com/gonium/gosdm630/releases).
-  - Parameters updated:
-    - renamed `serialadapter` to `adapter` and allow TCP sockets as well
-    - renamed `device_list` to `devices`
-  - Add MODBUS over TCP support
-  - Support SunSpec-compatible grid inverters
+    JSON.parse(input).Power.L1;
 
-## 0.7
+Just repeat these lines for each measurement you want to track. Finally,
+my sitemap contains the following lines:
 
-  - Support Saia Burgess Controls ALE3 meters
-  - Implement modbus simulation for testing
-  - Various improvements of the web UI
-  - Support for go 1.11
-  - Improved the README
+    Chart item=Power_Chart period=D refresh=1800
+
+This draws a chart of all items in the ``Power_Chart`` group.
+
+## How does it look like in OpenHAB?
+
+I use [OpenHAB 1.8](http://openhab.org) to record various measurements at
+home. In the classic ui, this is how one of the graphs looks like:
+
+![OpenHAB interface screenshot](img/openhab.png)
+
+Everything is in German, but the "Verlauf Strombezug" graph shows my
+power consumption for three phases. I have a SDM630 installed in my
+distribution cabinet. A serial connection links it to a Raspberry Pi
+(RPi).
+This is where this piece of software runs and exposes the measurements
+via a RESTful API. OpenHAB connects to it and stores the values, just as
+it does with other sensors in my home.

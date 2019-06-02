@@ -13,7 +13,7 @@
 	<nav class="navbar navbar-expand-sm navbar-dark bg-dark fixed-top">
 		<a class="navbar-brand" href="/">GoSDM630</a>
 		<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navContent"
-			aria-controls="navContent" aria-expanded="false" aria-label="Toggle navigation">
+		 aria-controls="navContent" aria-expanded="false" aria-label="Toggle navigation">
 			<span class="navbar-toggler-icon"></span>
 		</button>
 
@@ -42,7 +42,7 @@
 			<h1>Realtime measurements</h1>
 			<div id="meters">
 				<p>${ message }</p>
-				<table class="metertable table table-striped" v-for="(m, idx) in meters">
+				<table class="metertable table table-striped" v-for="(meter, idx) in meters">
 					<thead class="thead-dark">
 						<tr class="d-flex">
 							<th class="col-3">Meter ${ idx }</th>
@@ -53,174 +53,61 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr class="d-flex" v-if="populated(m.DCVoltage)">
-							<td class="col-3">DC Voltage (V)</td>
-							<td class="col-2">&mdash;</td>
-							<td class="col-2">&mdash;</td>
-							<td class="col-2">&mdash;</td>
-							<td class="col-3">${ m.DCVoltage }</td>
-						</tr>
-						<tr class="d-flex" v-if="populated(m.DCCurrent)">
-							<td class="col-3">DC Current (A)</td>
-							<td class="col-2">&mdash;</td>
-							<td class="col-2">&mdash;</td>
-							<td class="col-2">&mdash;</td>
-							<td class="col-3">${ m.DCCurrent }</td>
-						</tr>
-						<tr class="d-flex" v-if="populated(m.DCPower)">
-							<td class="col-3">DC Power (W)</td>
-							<td class="col-2">&mdash;</td>
-							<td class="col-2">&mdash;</td>
-							<td class="col-2">&mdash;</td>
-							<td class="col-3">${ m.DCPower }</td>
-						</tr>
-						<tr class="d-flex" v-if="populated(m.VoltageL1, m.VoltageL2, m.VoltageL3, m.Voltage)">
+						<tr class="d-flex" v-if="meter.VolLocPhsA != null || meter.VolLocPhsB != null || meter.VolLocPhsC != null">
 							<td class="col-3">Voltage (V)</td>
-							<td class="col-2" v-if="populated(m.VoltageL1)">${ m.VoltageL1 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.VoltageL2)">${ m.VoltageL2 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.VoltageL3)">${ m.VoltageL3 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-3" v-if="populated(m.Voltage)">${ m.Voltage }</td>
-							<td class="col-3" v-else>&mdash;</td>
+							<td class="col-2">${ meter.VolLocPhsA }</td>
+							<td class="col-2">${ meter.VolLocPhsB }</td>
+							<td class="col-2">${ meter.VolLocPhsC }</td>
+							<td class="col-3">-</td>
 						</tr>
-						<tr class="d-flex" v-if="populated(m.CurrentL1, m.CurrentL2, m.CurrentL3, m.Current)">
+						<tr class="d-flex" v-if="meter.AmpLocPhsA != null || meter.AmpLocPhsB != null || meter.AmpLocPhsB != null">
 							<td class="col-3">Current (A)</td>
-							<td class="col-2" v-if="populated(m.CurrentL1)">${ m.CurrentL1 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.CurrentL2)">${ m.CurrentL2 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.CurrentL3)">${ m.CurrentL3 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-3" v-if="populated(m.Current)">${ m.Current }</td>
-							<td class="col-3" v-else>${ ((val(m.CurrentL1) + val(m.CurrentL2) +
-								val(m.CurrentL3))).toFixed(2) }</td>
+							<td class="col-2">${ meter.AmpLocPhsA }</td>
+							<td class="col-2">${ meter.AmpLocPhsB }</td>
+							<td class="col-2">${ meter.AmpLocPhsB }</td>
+							<td class="col-3">${ (parseFloat(meter.AmpLocPhsA) + parseFloat(meter.AmpLocPhsB) + parseFloat(meter.AmpLocPhsB)).toFixed(2) }</td>
 						</tr>
-						<tr class="d-flex" v-if="populated(m.PowerL1, m.PowerL2, m.PowerL3, m.Power)">
+						<tr class="d-flex" v-if="meter.WLocPhsA != null || meter.WLocPhsB != null || meter.WLocPhsB != null">
 							<td class="col-3">Power (W)</td>
-							<td class="col-2" v-if="populated(m.PowerL1)">${ m.PowerL1 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.PowerL2)">${ m.PowerL2 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.PowerL3)">${ m.PowerL3 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-3" v-if="populated(m.Power)">${ m.Power }</td>
-							<td class="col-3" v-else>${ ((val(m.PowerL1) + val(m.PowerL2) + val(m.PowerL3))).toFixed(2) }
-							</td>
+							<td class="col-2">${ meter.WLocPhsA }</td>
+							<td class="col-2">${ meter.WLocPhsB }</td>
+							<td class="col-2">${ meter.WLocPhsB }</td>
+							<td class="col-3">${ (parseFloat(meter.WLocPhsA) + parseFloat(meter.WLocPhsB) + parseFloat(meter.WLocPhsB)).toFixed(2) }</td>
 						</tr>
-						<tr class="d-flex"
-							v-if="populated(m.ActivePowerL1, m.ActivePowerL2, m.ActivePowerL3, m.ActivePower)">
-							<td class="col-3">Active Power (W)</td>
-							<td class="col-2" v-if="populated(m.ActivePowerL1)">${ m.ActivePowerL1 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.ActivePowerL2)">${ m.ActivePowerL2 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.ActivePowerL3)">${ m.ActivePowerL3 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-3" v-if="populated(m.ActivePower)">${ m.ActivePower }</td>
-							<td class="col-3" v-else>${ ((val(m.ActivePowerL1) + val(m.ActivePowerL2) +
-								val(m.ActivePowerL3))).toFixed(2) }</td>
-							</tr>
-						<tr class="d-flex"
-							v-if="populated(m.ReactivePowerL1, m.ReactivePowerL2, m.ReactivePowerL3, m.ReactivePower)">
-							<td class="col-3">Reactive Power (W)</td>
-							<td class="col-2" v-if="populated(m.ReactivePowerL1)">${ m.ReactivePowerL1 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.ReactivePowerL2)">${ m.ReactivePowerL2 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.ReactivePowerL3)">${ m.ReactivePowerL3 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-3" v-if="populated(m.ReactivePower)">${ m.ReactivePower }</td>
-							<td class="col-3" v-else>${ ((val(m.ReactivePowerL1) + val(m.ReactivePowerL2) +
-								val(m.ReactivePowerL3))).toFixed(2)
-								}</td>
-						</tr>
-						<tr class="d-flex"
-							v-if="populated(m.ImportPowerL1, m.ImportPowerL2, m.ImportPowerL3, m.ImportPower)">
-							<td class="col-3">Import Power (W)</td>
-							<td class="col-2" v-if="populated(m.ImportPowerL1)">${ m.ImportPowerL1 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.ImportPowerL2)">${ m.ImportPowerL2 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.ImportPowerL3)">${ m.ImportPowerL3 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-3" v-if="populated(m.ImportPower)">${ m.ImportPower }</td>
-							<td class="col-3" v-else>${ ((val(m.ImportPowerL1) + val(m.ImportPowerL2) +
-								val(m.ImportPowerL3))).toFixed(2) }
-						</tr>
-						<tr class="d-flex"
-							v-if="populated(m.ExportPowerL1, m.ExportPowerL2, m.ExportPowerL3, m.ExportPower)">
-							<td class="col-3">Export Power (W)</td>
-							<td class="col-2" v-if="populated(m.ExportPowerL1)">${ m.ExportPowerL1 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.ExportPowerL2)">${ m.ExportPowerL2 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.ExportPowerL3)">${ m.ExportPowerL3 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-3" v-if="populated(m.ExportPower)">${ m.ExportPower }</td>
-							<td class="col-3" v-else>${ ((val(m.ExportPowerL1) + val(m.ExportPowerL2) +
-								val(m.ExportPowerL3))).toFixed(2) }</td>
-						</tr>
-						<tr class="d-flex" v-if="populated(m.ImportL1, m.ImportL2, m.ImportL3, m.Import)">
+						<tr class="d-flex" v-if="meter.TotkWhImportPhsA != null || meter.TotkWhImportPhsB != null || meter.TotkWhImportPhsB != null || meter.TotkWhImport != null">
 							<td class="col-3">Import (kWh)</td>
-							<td class="col-2" v-if="populated(m.ImportL1)">${ m.ImportL1 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.ImportL2)">${ m.ImportL2 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.ImportL3)">${ m.ImportL3 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-3" v-if="populated(m.Import)">${ m.Import }</td>
-							<td class="col-3" v-else>${ ((val(m.ImportL1) + val(m.ImportL2) + val(m.ImportL3))).toFixed(2)
-								}</td>
+							<td class="col-2">${ meter.TotkWhImportPhsA }</td>
+							<td class="col-2">${ meter.TotkWhImportPhsB }</td>
+							<td class="col-2">${ meter.TotkWhImportPhsB }</td>
+							<td class="col-3">${ meter.TotkWhImport }</td>
 						</tr>
-						<tr class="d-flex" v-if="populated(m.ExportL1, m.ExportL2, m.ExportL3, m.Export)">
+						<tr class="d-flex" v-if="meter.TotkWhExportPhsA != null || meter.TotkWhExportPhsB != null || meter.TotkWhExportPhsB != null || meter.TotkWhExport != null">
 							<td class="col-3">Export (kWh)</td>
-							<td class="col-2" v-if="populated(m.ExportL1)">${ m.ExportL1 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.ExportL2)">${ m.ExportL2 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.ExportL3)">${ m.ExportL3 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-3" v-if="populated(m.Export)">${ m.Export }</td>
-							<td class="col-3" v-else>${ ((val(m.ExportL1) + val(m.ExportL2) +
-								val(m.ExportL3))).toFixed(2) }</td>
+							<td class="col-2">${ meter.TotkWhExportPhsA }</td>
+							<td class="col-2">${ meter.TotkWhExportPhsB }</td>
+							<td class="col-2">${ meter.TotkWhExportPhsB }</td>
+							<td class="col-3">${ meter.TotkWhExport }</td>
 						</tr>
-						<tr class="d-flex" v-if="populated(m.CosphiL1, m.CosphiL2, m.CosphiL3, m.Cosphi)">
-							<td class="col-3">Power Factor (cos 𝜑)</td>
-							<td class="col-2" v-if="populated(m.CosphiL1)">${ m.CosphiL1 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.CosphiL2)">${ m.CosphiL2 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.CosphiL3)">${ m.CosphiL3 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-3" v-if="populated(m.Cosphi)">${ m.Cosphi }</td>
-							<td class="col-3" v-else>&mdash;</td>
+						<tr class="d-flex" v-if="meter.AngLocPhsA != null || meter.AngLocPhsB != null || meter.AngLocPhsB != null">
+							<td class="col-3">Power Factor</td>
+							<td class="col-2">${ meter.AngLocPhsA }</td>
+							<td class="col-2">${ meter.AngLocPhsB }</td>
+							<td class="col-2">${ meter.AngLocPhsB }</td>
+							<td class="col-3">-</td>
 						</tr>
-						<tr class="d-flex" v-if="populated(m.THDL1, m.THDL2, m.THDL3, m.THD)">
+						<tr class="d-flex" v-if="meter.ThdVolPhsA != null || meter.ThdVolPhsB != null || meter.ThdVolPhsB != null || meter.ThdVol != null">
 							<td class="col-3">THD Voltage (%)</td>
-							<td class="col-2" v-if="populated(m.THDL1)">${ m.THDL1 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.THDL2)">${ m.THDL2 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-2" v-if="populated(m.THDL3)">${ m.THDL3 }</td>
-							<td class="col-2" v-else>&mdash;</td>
-							<td class="col-3" v-if="populated(m.THD)">${ m.THD }</td>
-							<td class="col-3" v-else>&mdash;</td>
+							<td class="col-2">${ meter.ThdVolPhsA }</td>
+							<td class="col-2">${ meter.ThdVolPhsB }</td>
+							<td class="col-2">${ meter.ThdVolPhsB }</td>
+							<td class="col-3">${ meter.ThdVol }</td>
 						</tr>
-						<tr class="d-flex" v-if="populated(m.Frequency)">
+						<tr class="d-flex" v-if="meter.Freq != null">
 							<td class="col-3">Frequency (Hz)</td>
-							<td class="col-2">&mdash;</td>
-							<td class="col-2">&mdash;</td>
-							<td class="col-2">&mdash;</td>
-							<td class="col-3">${ m.Frequency }</td>
-						</tr>
-						<tr class="d-flex" v-if="populated(m.HeatsinkTemp)">
-							<td class="col-3">Heatsink Temperature (°C)</td>
-							<td class="col-2">&mdash;</td>
-							<td class="col-2">&mdash;</td>
-							<td class="col-2">&mdash;</td>
-							<td class="col-3">${ m.HeatsinkTemp }</td>
+							<td class="col-2">-</td>
+							<td class="col-2">-</td>
+							<td class="col-2">-</td>
+							<td class="col-3">${ meter.Frequency }</td>
 						</tr>
 					</tbody>
 				</table>
@@ -238,10 +125,10 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr v-for="(m, idx) in meterstatus">
-							<td>${ m.Id }</td>
-							<td>${ m.Type }</td>
-							<td>${ m.Status }</td>
+						<tr v-for="(meter, idx) in meterstatus">
+							<td>${ meter.Id }</td>
+							<td>${ meter.Type }</td>
+							<td>${ meter.Status }</td>
 						</tr>
 					</tbody>
 				</table>

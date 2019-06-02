@@ -1,12 +1,10 @@
 package sdm630
 
 import (
-	"errors"
 	"fmt"
+	"log"
 	"math"
 	"time"
-
-	. "github.com/gonium/gosdm630/meters"
 )
 
 // UniqueIdFormat is a format string for unique ID generation.
@@ -190,66 +188,66 @@ func (r *Readings) MergeSnip(q QuerySnip) {
 	r.Timestamp = q.ReadTimestamp
 	r.Unix = r.Timestamp.Unix()
 	switch q.IEC61850 {
-	case VoltageL1:
+	case "VolLocPhsA":
 		r.Voltage.L1 = &q.Value
-	case VoltageL2:
+	case "VolLocPhsB":
 		r.Voltage.L2 = &q.Value
-	case VoltageL3:
+	case "VolLocPhsC":
 		r.Voltage.L3 = &q.Value
-	case CurrentL1:
+	case "AmpLocPhsA":
 		r.Current.L1 = &q.Value
-	case CurrentL2:
+	case "AmpLocPhsB":
 		r.Current.L2 = &q.Value
-	case CurrentL3:
+	case "AmpLocPhsC":
 		r.Current.L3 = &q.Value
-	case PowerL1:
+	case "WLocPhsA":
 		r.Power.L1 = &q.Value
-	case PowerL2:
+	case "WLocPhsB":
 		r.Power.L2 = &q.Value
-	case PowerL3:
+	case "WLocPhsC":
 		r.Power.L3 = &q.Value
-	case CosphiL1:
+	case "AngLocPhsA":
 		r.Cosphi.L1 = &q.Value
-	case CosphiL2:
+	case "AngLocPhsB":
 		r.Cosphi.L2 = &q.Value
-	case CosphiL3:
+	case "AngLocPhsC":
 		r.Cosphi.L3 = &q.Value
-	case ImportL1:
+	case "TotkWhImportPhsA":
 		r.Import.L1 = &q.Value
-	case ImportL2:
+	case "TotkWhImportPhsB":
 		r.Import.L2 = &q.Value
-	case ImportL3:
+	case "TotkWhImportPhsC":
 		r.Import.L3 = &q.Value
-	case Import:
+	case "TotkWhImport":
 		r.TotalImport = &q.Value
-	case ExportL1:
+	case "TotkWhExportPhsA":
 		r.Export.L1 = &q.Value
-	case ExportL2:
+	case "TotkWhExportPhsB":
 		r.Export.L2 = &q.Value
-	case ExportL3:
+	case "TotkWhExportPhsC":
 		r.Export.L3 = &q.Value
-	case Export:
+	case "TotkWhExport":
 		r.TotalExport = &q.Value
-		//	case L1THDCurrent
+		//	case OpCodeL1THDCurrent:
 		//		r.THD.Current.L1 = &q.Value
-		//	case L2THDCurrent
+		//	case OpCodeL2THDCurrent:
 		//		r.THD.Current.L2 = &q.Value
-		//	case L3THDCurrent
+		//	case OpCodeL3THDCurrent:
 		//		r.THD.Current.L3 = &q.Value
-		//	case THDCurrent
+		//	case OpCodeAvgTHDCurrent:
 		//		r.THD.AvgCurrent = &q.Value
-	case THDL1:
+	case "ThdVolPhsA":
 		r.THD.VoltageNeutral.L1 = &q.Value
-	case THDL2:
+	case "ThdVolPhsB":
 		r.THD.VoltageNeutral.L2 = &q.Value
-	case THDL3:
+	case "ThdVolPhsC":
 		r.THD.VoltageNeutral.L3 = &q.Value
-	case THD:
+	case "ThdVol":
 		r.THD.AvgVoltageNeutral = &q.Value
-	case Frequency:
+	case "Freq":
 		r.Frequency = &q.Value
 	default:
-		// log.Fatalf("Cannot merge unknown IEC: %+v", q)
+		log.Fatalf("Cannot merge unknown IEC: %+v", q)
 	}
 }
 
@@ -268,21 +266,9 @@ func (r ReadingSlice) NotOlderThan(ts time.Time) (res ReadingSlice) {
 }
 
 // Average calculates average across a ReadingSlice
-func (r *ReadingSlice) Average() (avg *Readings, err error) {
-	// check for panics
-	defer func() {
-		if r := recover(); r != nil {
-			avg = nil
-			switch x := r.(type) {
-			case string:
-				err = errors.New(x)
-			case error:
-				err = x
-			default:
-				err = errors.New("unknown panic")
-			}
-		}
-	}()
+func (r *ReadingSlice) Average() (*Readings, error) {
+	var avg *Readings
+	var err error
 
 	for idx, r := range *r {
 		if idx == 0 {
@@ -294,10 +280,6 @@ func (r *ReadingSlice) Average() (avg *Readings, err error) {
 				return nil, err
 			}
 		}
-	}
-
-	if len(*r) == 0 {
-		return nil, errors.New("readings empty")
 	}
 
 	return avg.divide(float64(len(*r))), nil
