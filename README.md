@@ -9,7 +9,7 @@ easy to integrate it into your home automation system. Both a REST-style
 API and a streaming API are available.
 
 **NOTE**: `gosdm` is not longer actively developed and has been archived.
-The development og `gosdm` is continued at [volkszaehler/mbmd](https://github.com/volkszaehler/mbmd) under the name `mbmd` which stands for ModBus Measurement Daemon.
+The development of `gosdm` is continued at [volkszaehler/mbmd](https://github.com/volkszaehler/mbmd) under the name `mbmd` which stands for ModBus Measurement Daemon.
 `mbmd` adds support for additional meters and grid inverters.
 
 ## Supported Devices
